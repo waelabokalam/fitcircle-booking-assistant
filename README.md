@@ -26,7 +26,9 @@ GEMINI_MODEL=gemini-3.5-flash-lite
 
 3. Run `npm start`. The decision inspector reports `gemini` after validating a provider response. The adapter calls Google's API with a structured output schema. Keep the API key in the server environment and use synthetic messages for this exercise. [generateContent REST API](https://ai.google.dev/api/generate-content) · [Structured outputs](https://ai.google.dev/gemini-api/docs/structured-output)
 
-When the provider is unavailable or its output fails validation, chat keeps the draft, uses bounded local recognition, and reports `local-fallback` in the trace. The stateless assignment endpoint retains its original HTTP 503 behavior.
+Gemini 3.5 Flash-Lite is the default Gemini model. The adapter retries timeouts and temporary upstream errors such as HTTP 503, with exponential backoff and jitter. It allows three attempts, at most 14 seconds per attempt, and a 40-second total budget. A `Retry-After` delay can defer a retry within that budget. Authentication, quota and evidence validation failures end the request immediately.
+
+If Gemini still fails, chat keeps the draft, uses bounded local recognition, and reports `local-fallback` in the trace. The stateless assignment endpoint returns HTTP 503.
 
 ## API
 
@@ -78,14 +80,14 @@ The original ten-message benchmark uses a fixed reference instant (`2026-11-25T1
 
 The HTTP regressions cover the reported exchange, Arabic and mixed-language conversations, corrections, reset, isolation, expiry, ambiguity, provider failures and booking constraints. Provider fixtures simulate HTTP responses. The live benchmark requires a Gemini key and network access and measures the provider-enabled pipeline.
 
-Phase 1 live verification is **PARTIAL**. Gemini 3.5 Flash-Lite passed 8 of 10 original cases. All four browser replies were correct, with two accepted Gemini responses and two local fallbacks. Gemini 3.5 Flash passed 3 of 10 cases in the initial run. [Verification details](RESULTS.md#live-gemini-verification) · [Live case results](RESULTS_LIVE.md)
+Phase 1 live verification is **PASS** for the rerun. Gemini 3.5 Flash-Lite returned a validated response for all 10 original cases and all four browser turns. The benchmark recovered from two real HTTP 503s on retry. [Verification details](RESULTS.md#live-gemini-verification) · [Live case results](RESULTS_LIVE.md)
 
 ## Known limits and next steps
 
 - All slots use a fictional inventory. A match only confirms mock availability.
 - The grammar and normalizers cover a bounded set of expressions, sports and areas. Complex negation, unusual date and time expressions, and unsupported terminology may require rephrasing. Multiple independent bookings need separate drafts.
 - The session ID acts as a bearer token on the local demo. State lives in a single process and disappears on restart. A browser reload starts a new chat. The mock neighborhood distances are fixed.
-- Provider calls have a 12-second deadline. Live delays can trigger local fallback in chat and HTTP 503 on the stateless endpoint.
+- A sustained provider disruption can delay a reply for up to 40 seconds before local fallback in chat or HTTP 503 from the stateless endpoint.
 
 ## Repository map
 

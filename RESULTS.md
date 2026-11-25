@@ -26,7 +26,7 @@ Every expected extraction field is asserted, in addition to decision status and 
 | `npm test` on Node.js 26.8.2 with loopback access | 57/57 passed | 73/73 passed, including 16 new HTTP regressions |
 | Original `npm run eval` with the fixed Damascus clock | 10/10 passed | 10/10 passed |
 | In-app browser automation against the local server | All four reported replies reproduced | Retained padel and tomorrow through all four turns |
-| `npm run eval:live` | — | 3/10 with Gemini 3.5 Flash and 8/10 with Gemini 3.5 Flash-Lite |
+| `npm run eval:live` | 3/10 with Flash and 8/10 with Flash-Lite before retries | 10/10 with Flash-Lite and retries |
 
 The final suite and offline benchmark also passed on Node.js 23.5.0.
 
@@ -45,20 +45,21 @@ The automated Gemini tests use HTTP fixtures. They verify pending-field context,
 
 ### Live Gemini verification
 
-**Verdict — PARTIAL.** Both models received the original ten synthetic messages through the live stateless evaluator. The cases, Damascus reference clock and 12-second provider deadline were used for both runs. The score measures the full provider-enabled pipeline, including bounded local recognition and deterministic checks.
+**Verdict — PASS for the retry-enabled rerun.** All 10 original benchmark cases passed with `trace.source=gemini`, and all four browser turns produced the expected replies with `Extraction: gemini` in the inspector. The browser used the same fixed Damascus reference clock. The benchmark score measures the full pipeline, including bounded local recognition and deterministic checks.
 
-| Model | Benchmark | Cases returning `EXTRACTION_ERROR` | Browser replies | Browser turns with accepted Gemini output |
+| Run | Benchmark | Cases returning `EXTRACTION_ERROR` | Correct browser replies | Browser turns with validated Gemini output |
 | --- | --- | --- | --- | --- |
-| `gemini-3.5-flash` | 3/10 | 01, 03, 05, 06, 07, 08, 10 | 4/4 | 2/4 |
-| `gemini-3.5-flash-lite` | 8/10 | 04, 07 | 4/4 | 2/4 |
+| Flash, before retries | 3/10 | 01, 03, 05, 06, 07, 08, 10 | 4/4 | 2/4 |
+| Flash-Lite, before retries | 8/10 | 04, 07 | 4/4 | 2/4 |
+| **Flash-Lite, with retries** | **10/10** | None | **4/4** | **4/4** |
 
-Three diagnostic replays of failed Flash inputs hit the 12-second client deadline. The two Flash-Lite probes used to select the second model returned valid responses within that deadline. In separate Flash-Lite diagnostics after the benchmark, case 04 and the browser's final `tmw` both returned valid responses. Google returned HTTP 503 for case 07. The scored runs are recorded above. The complete Flash-Lite benchmark is in [RESULTS_LIVE.md](RESULTS_LIVE.md) and [results-live.json](results-live.json).
+Benchmark cases 02 and 03 received HTTP 503 on their first attempt and returned valid output on their second. The benchmark made 12 provider attempts. Every browser turn succeeded on its first attempt. The reruns encountered zero client timeouts, and the automated suite passed **77/77**, including a fixture that recovers from a response-body timeout. The original offline benchmark passed **10/10**. [Live benchmark report](RESULTS_LIVE.md) · [Live case data](results-live.json)
 
-| Customer | Browser reply on both runs | Flash source | Flash-Lite source |
-| --- | --- | --- | --- |
-| `i want to book tmw` | Which sport would you like to book? | `gemini` | `gemini` |
-| `padle` | Which area would you prefer? | `local-fallback` | `gemini` |
-| `paddle` | Which area would you prefer? | `gemini` | `local-fallback` |
-| `tmw` | Which area would you prefer? | `local-fallback` | `local-fallback` |
+| Customer | Browser reply | Flash source before retries | Flash-Lite source before retries | Flash-Lite source with retries |
+| --- | --- | --- | --- | --- |
+| `i want to book tmw` | Which sport would you like to book? | `gemini` | `gemini` | `gemini` |
+| `padle` | Which area would you prefer? | `local-fallback` | `gemini` | `gemini` |
+| `paddle` | Which area would you prefer? | `gemini` | `local-fallback` | `gemini` |
+| `tmw` | Which area would you prefer? | `local-fallback` | `local-fallback` | `gemini` |
 
-Both Gemini-enabled browser sessions retained November 26 from the first turn and padel from the second turn. Each finished by asking for the area. Provider reliability remains the gap in live verification.
+The browser retained November 26 from the first turn and padel from the second turn, then finished by asking for the area. Before the retry change, three Flash diagnostic requests hit the 12-second deadline, and Google returned HTTP 503 on a Flash-Lite diagnostic replay of case 07. The current 40-second total budget still bounds recovery during a sustained outage.

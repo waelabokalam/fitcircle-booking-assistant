@@ -1,7 +1,9 @@
 {
   "mode": "Provider-enabled pipeline with live Gemini",
+  "model": "gemini-3.5-flash-lite",
+  "geminiResponses": 10,
   "reference": "2026-11-25T12:00:00.000Z",
-  "passed": 8,
+  "passed": 10,
   "total": 10,
   "results": [
     {
@@ -139,44 +141,54 @@
     {
       "id": "04",
       "expected": "MATCH",
-      "actual": "EXTRACTION_ERROR",
-      "pass": false,
+      "actual": "MATCH",
+      "pass": true,
       "message": "Book padel tomorrow at 7 pm in Mezzeh for 90 minutes, 4 players.",
-      "errors": [
-        "sport: expected \"padel\", got null",
-        "area: expected \"mezzeh\", got null",
-        "date: expected \"2026-11-26\", got null",
-        "start_time: expected \"19:00\", got null",
-        "duration_minutes: expected 90, got null",
-        "number_of_players: expected 4, got null",
-        "status: EXTRACTION_ERROR != MATCH",
-        "Wrong venue",
-        "Wrong start"
-      ],
+      "errors": [],
       "result": {
-        "status": "EXTRACTION_ERROR",
+        "status": "MATCH",
         "request": {
-          "sport": null,
-          "area": null,
-          "date": null,
-          "start_time": null,
-          "duration_minutes": null,
-          "number_of_players": null,
+          "sport": "padel",
+          "area": "mezzeh",
+          "date": "2026-11-26",
+          "start_time": "19:00",
+          "duration_minutes": 90,
+          "number_of_players": 4,
           "language": "en",
           "time_window": null
         },
-        "reply": "I couldn’t read that request right now. Could you rephrase it?",
-        "match": null,
+        "reply": "Good news! Mezzeh Padel Club — 2026-11-26, 19:00–20:30 is available for 4 players. This confirms mock availability, not a real reservation.",
+        "match": {
+          "venue_id": "mz-padel",
+          "venue": "Mezzeh Padel Club",
+          "venue_ar": "نادي المزة للبادل",
+          "area": "mezzeh",
+          "sport": "padel",
+          "date": "2026-11-26",
+          "start_time": "19:00",
+          "end_time": "20:30",
+          "capacity": 4
+        },
         "alternatives": [],
         "clarification_field": null,
         "trace": {
-          "source": "unavailable",
+          "source": "gemini",
           "timezone": "Asia/Damascus",
           "reference_date": "2026-11-25",
           "checks": [
-            "Extraction unavailable or invalid"
+            "Extraction evidence validated",
+            "Date, time, duration and capacity normalized in code",
+            "Sport, capacity, full interval, horizon and past times checked",
+            "Exact area/date/time constraint satisfied"
           ],
-          "evidence": null
+          "evidence": {
+            "sport": "padel",
+            "area": "Mezzeh",
+            "date": "tomorrow",
+            "start_time": "at 7 pm",
+            "duration": "90 minutes",
+            "number_of_players": "4 players"
+          }
         }
       }
     },
@@ -315,43 +327,43 @@
     {
       "id": "07",
       "expected": "OUT_OF_RANGE",
-      "actual": "EXTRACTION_ERROR",
-      "pass": false,
+      "actual": "OUT_OF_RANGE",
+      "pass": true,
       "message": "بدي تنس بدمر مبارح الساعة ١٠ الصبح لمدة ساعة، نحنا ٢",
-      "errors": [
-        "sport: expected \"tennis\", got null",
-        "area: expected \"dummar\", got null",
-        "date: expected \"2026-11-24\", got null",
-        "start_time: expected \"10:00\", got null",
-        "duration_minutes: expected 60, got null",
-        "number_of_players: expected 2, got null",
-        "status: EXTRACTION_ERROR != OUT_OF_RANGE",
-        "clarification: null != date"
-      ],
+      "errors": [],
       "result": {
-        "status": "EXTRACTION_ERROR",
+        "status": "OUT_OF_RANGE",
         "request": {
-          "sport": null,
-          "area": null,
-          "date": null,
-          "start_time": null,
-          "duration_minutes": null,
-          "number_of_players": null,
+          "sport": "tennis",
+          "area": "dummar",
+          "date": "2026-11-24",
+          "start_time": "10:00",
+          "duration_minutes": 60,
+          "number_of_players": 2,
           "language": "ar",
           "time_window": null
         },
-        "reply": "ما قدرت افهم الطلب هلأ، فيك تعيد صياغته؟",
+        "reply": "الحجوزات التجريبية من 2026-11-25 لـ 2026-12-01. أي يوم بناسبك ضمن هالفترة؟",
         "match": null,
         "alternatives": [],
-        "clarification_field": null,
+        "clarification_field": "date",
         "trace": {
-          "source": "unavailable",
+          "source": "gemini",
           "timezone": "Asia/Damascus",
           "reference_date": "2026-11-25",
           "checks": [
-            "Extraction unavailable or invalid"
+            "Extraction evidence validated",
+            "Date, time, duration and capacity normalized in code",
+            "Date outside seven-day horizon"
           ],
-          "evidence": null
+          "evidence": {
+            "sport": "تنس",
+            "area": "دمر",
+            "date": "مبارح",
+            "start_time": "الساعة ١٠ الصبح",
+            "duration": "لمدة ساعة",
+            "number_of_players": "نحنا ٢"
+          }
         }
       }
     },
