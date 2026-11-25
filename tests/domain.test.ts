@@ -16,7 +16,15 @@ test('evidence rejects hallucinated date',()=>assert.throws(()=>validateEvidence
 test('evidence rejects unexpected fields',()=>assert.throws(()=>validateEvidence({...emptyRaw(),available:true},'yes')));
 test('evidence rejects missing keys',()=>assert.throws(()=>validateEvidence({},'yes')));
 test('clock marker is not duration',()=>assert.equal(validateEvidence({...emptyRaw(),start_time:'الساعة ٧',duration:'ساعة'},'الساعة ٧').duration,null));
-test('availability has exactly seven days and six mock venues',()=>{const s=availabilitySnapshot(now);assert.equal(s.length,7);assert.equal(s[6].date,'2026-12-01');assert.ok(s.every(d=>d.venues.length===6));});
+test('seven days of synthetic slots use the five real venue names',()=>{
+  const snapshot=availabilitySnapshot(now);
+  const names=['Top Academy Courts','Trio Padel Arena','G.M Padel',"Let's Padel",'Ace Padel'].sort();
+  assert.equal(snapshot.length,7);
+  assert.equal(snapshot[6].date,'2026-12-01');
+  for(const day of snapshot){
+    assert.deepEqual([...new Set(day.venues.map(venue=>venue.venue))].sort(),names);
+  }
+});
 const req:Request={sport:'padel',area:'mezzeh',date:'2026-11-26',start_time:'19:00',duration_minutes:60,number_of_players:4,language:'en',time_window:null};
 test('exact off-grid start fits interval',()=>assert.equal(findSlots(req,{kind:'exact',minute:1155},now).match?.start_time,'19:15'));
 test('end must fit full interval',()=>{const r=findSlots({...req,duration_minutes:90},{kind:'exact',minute:1290},now);assert.equal(r.match,null);assert.ok(r.alternatives.length);});
@@ -24,7 +32,14 @@ test('past same-day starts are excluded',()=>{const r=findSlots({...req,date:'20
 test('capacity and sport hard constraints',()=>assert.deepEqual(findSlots({...req,number_of_players:5},{kind:'exact',minute:1140},now),{match:null,alternatives:[]}));
 test('weekly maintenance makes unavailable interval',()=>assert.deepEqual(freeIntervals(VENUES[0],'2026-12-01'),[[540,720]]));
 test('time window requires entire booking to fit',()=>{const r=findSlots({...req,duration_minutes:120},{kind:'window',start:1140,end:1200},now);assert.equal(r.match,null);});
-test('explicit any area allows any matching venue',()=>assert.equal(findSlots({...req,area:'any'},{kind:'exact',minute:1020},now).match?.venue_id,'ar-padel'));
+test('explicit any area allows any matching venue',()=>assert.equal(findSlots({...req,area:'any'},{kind:'exact',minute:1020},now).match?.venue_id,'g-m-padel'));
+test('Abu Rummaneh padel alternatives use a real listed venue and disclose the mock schedule',async()=>{
+  const r=await book(CASES[5].message,localExtractor,clock);
+  assert.equal(r.match,null);
+  assert.equal(r.alternatives[0]?.venue,'Top Academy Courts');
+  assert.ok(r.alternatives.every(slot=>VENUES.some(venue=>venue.name===slot.venue&&venue.area===slot.area)));
+  assert.match(r.reply,/تجريبي/);
+});
 test('same ranking for repeated identical inputs',()=>{const r={...req,start_time:'15:00'};assert.deepEqual(findSlots(r,{kind:'exact',minute:900},now),findSlots(r,{kind:'exact',minute:900},now));});
 test('provider failure fails closed',async()=>{const r=await book('padel tomorrow',async()=>{throw new Error('secret');},clock);assert.equal(r.status,'EXTRACTION_ERROR');assert.equal(r.match,null);assert.ok(!JSON.stringify(r).includes('secret'));});
 for(const c of CASES)test(`acceptance ${c.id}`,async()=>{const r=await book(c.message,localExtractor,clock);assert.equal(r.status,c.expected);assert.equal(r.clarification_field,c.field);for(const [k,v] of Object.entries(c.fields))assert.deepEqual(r.request[k as keyof Request],v,k);if(c.venue)assert.equal(r.match?.venue_id,c.venue);if(c.start)assert.equal(r.match?.start_time,c.start);if(c.expected==='ALTERNATIVES')assert.ok(r.alternatives.length);});

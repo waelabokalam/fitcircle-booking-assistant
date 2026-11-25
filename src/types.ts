@@ -3,7 +3,7 @@ export type Field = typeof FIELDS[number];
 export type RawIntent = Record<Field, string | null>;
 export type Language = 'ar' | 'en' | 'mixed';
 export type Sport = 'padel' | 'football' | 'basketball' | 'tennis';
-export type Area = 'mezzeh' | 'malki' | 'abu_rummaneh' | 'kafr_souseh' | 'dummar' | 'baramkeh' | 'adawi' | 'any';
+export type Area = 'mezzeh' | 'malki' | 'abu_rummaneh' | 'kafr_souseh' | 'dummar' | 'baramkeh' | 'adawi' | 'al_wahda' | 'any';
 export type TimeRequest = { kind:'exact'; minute:number } | { kind:'window'; start:number; end:number };
 export type Request = {
   sport: Sport | null; area: Area | null; date: string | null;

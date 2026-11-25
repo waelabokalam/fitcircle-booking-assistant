@@ -1,22 +1,33 @@
 import type {Venue,Slot,Request,TimeRequest,Area} from './types.ts';
 import {addDays,dayDistance,hhmm,localParts,MIN_DURATION_MINUTES} from './time.ts';
+import {FITCIRCLE_COURTS} from './court-guide.ts';
+
+function mockCourt(slug:string,sport:Exclude<Venue['sport'],'tennis'>,capacity:number,intervals:Venue['intervals']):Venue {
+  const court=FITCIRCLE_COURTS.find(entry=>entry.slug===slug&&entry.sports.includes(sport));
+  if(!court)throw new Error(`Missing FitCircle venue fixture reference: ${slug} (${sport})`);
+  const id=sport==='padel'?slug:`${slug}-${sport}`;
+  return {id,name:court.name,name_ar:court.name,area:court.area,sport,capacity,intervals};
+}
+
+// The catalog provides names and locations only. Every interval and capacity below is synthetic.
 export const VENUES:Venue[]=[
-  {id:'mz-padel',name:'Mezzeh Padel Club',name_ar:'نادي المزة للبادل',area:'mezzeh',sport:'padel',capacity:4,intervals:[[540,720],[1080,1320]]},
-  {id:'mk-football',name:'Malki Football Arena',name_ar:'ملعب المالكي لكرة القدم',area:'malki',sport:'football',capacity:12,intervals:[[960,1080],[1140,1380]]},
-  {id:'ar-padel',name:'Abu Rummaneh Padel',name_ar:'بادل أبو رمانة',area:'abu_rummaneh',sport:'padel',capacity:4,intervals:[[600,840],[1020,1200]]},
-  {id:'ks-football',name:'Kafr Souseh Sports Field',name_ar:'ملعب كفرسوسة الرياضي',area:'kafr_souseh',sport:'football',capacity:16,intervals:[[540,780],[1020,1320]]},
-  {id:'dm-tennis',name:'Dummar Tennis Center',name_ar:'مركز دمر للتنس',area:'dummar',sport:'tennis',capacity:4,intervals:[[480,720],[900,1200]]},
-  {id:'bk-basketball',name:'Baramkeh Basketball Court',name_ar:'ملعب البرامكة لكرة السلة',area:'baramkeh',sport:'basketball',capacity:10,intervals:[[600,780],[1020,1260]]}
+  mockCourt('top-academy-courts','padel',4,[[540,720],[1080,1320]]),
+  mockCourt('trio-padel-arena','padel',4,[[600,840],[1020,1200]]),
+  mockCourt('g-m-padel','padel',4,[[600,840],[1020,1320]]),
+  mockCourt('let-s-padel','padel',4,[[570,720],[840,1020]]),
+  mockCourt('ace-padel','padel',4,[[600,720],[1050,1260]]),
+  mockCourt('top-academy-courts','football',16,[[960,1080],[1140,1380]]),
+  mockCourt('top-academy-courts','basketball',10,[[600,780],[1020,1260]])
 ];
 // Synthetic neighborhood adjacency, not measured road distance.
-const neighbors:Record<Exclude<Area,'any'>,Exclude<Area,'any'>[]>={mezzeh:['kafr_souseh','dummar','malki'],malki:['abu_rummaneh','mezzeh','baramkeh'],abu_rummaneh:['malki','baramkeh','mezzeh'],kafr_souseh:['mezzeh','baramkeh'],dummar:['mezzeh'],baramkeh:['abu_rummaneh','malki','kafr_souseh'],adawi:[]};
+const neighbors:Record<Exclude<Area,'any'>,Exclude<Area,'any'>[]>={mezzeh:['kafr_souseh','dummar','malki'],malki:['abu_rummaneh','mezzeh','baramkeh'],abu_rummaneh:['malki','baramkeh','mezzeh'],kafr_souseh:['mezzeh','baramkeh'],dummar:['mezzeh'],baramkeh:['abu_rummaneh','malki','kafr_souseh'],adawi:[],al_wahda:[]};
 export function areaDistance(a:Area,b:Exclude<Area,'any'>):number{return a==='any'||a===b?0:neighbors[a].includes(b)?1:2;}
 export function freeIntervals(venue:Venue,date:string):[number,number][] {
   // A fixed weekly pattern ensures reproducibility without an external DB.
-  // Tuesday evening maintenance at Mezzeh, Thursday football gap in Malki.
+  // Synthetic gaps on Tuesday evening for padel and Thursday evening for football.
   const weekday=new Date(`${date}T00:00:00Z`).getUTCDay();
-  if(venue.id==='mz-padel'&&weekday===2)return venue.intervals.filter(([s])=>s<720);
-  if(venue.id==='mk-football'&&weekday===4)return [[960,1080],[1200,1380]];
+  if(venue.id==='top-academy-courts'&&weekday===2)return venue.intervals.filter(([s])=>s<720);
+  if(venue.id==='top-academy-courts-football'&&weekday===4)return [[960,1080],[1200,1380]];
   return venue.intervals.map(([s,e])=>[s,e]);
 }
 function nextStart(p:ReturnType<typeof localParts>,now:Date):number {

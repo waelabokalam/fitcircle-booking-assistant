@@ -1,19 +1,19 @@
 # FitCircle Booking Assistant
 
-A bilingual chat guide for finding real FitCircle courts in Damascus. The chat opens FitCircle's official pages for live times and booking. The original stateless exercise API uses a synthetic schedule.
+A bilingual booking assistant for the Levare Lab internship exercise. The submission endpoint takes one message, extracts a structured request, and checks a seven-day mock schedule for five real Damascus venues. It returns a match, alternatives, or one clarifying question.
 
 ## Quick start
 
 Requires Node.js 22.16 or newer with full ICU timezone data. Node runs the TypeScript source directly, with zero third-party packages.
 
+Run `npm start`, then try the assignment endpoint in another terminal.
+
 ```sh
-npm start
-# Open http://localhost:3000
+curl -s http://localhost:3000/api/booking -H 'Content-Type: application/json' \
+  -d '{"message":"Book padel tomorrow at 7 pm in Mezzeh for 90 minutes, 4 players."}'
 ```
 
-The default `local` mode uses rule-based extraction. To try the court guide, send `i want to play tmw`, tap **Padel**, choose **Mezzeh**, then open **Top Academy Courts**. The court page opens on the selected date. You can also type your reply. Use **New booking** or type `start over` to clear the draft. The server binds to loopback for local evaluation.
-
-Typing Arabic switches the interface to Arabic and right-to-left immediately. **إرسال** sends the message, and **حجز جديد** clears the draft while keeping Arabic active. Typing English switches back.
+The default `local` mode runs without credentials. See the ten test messages and their outcomes in [RESULTS.md](RESULTS.md) and [RESULTS_LIVE.md](RESULTS_LIVE.md).
 
 ### Enable actual LLM extraction
 
@@ -26,23 +26,19 @@ GEMINI_API_KEY=your_key_here
 GEMINI_MODEL=gemini-3.5-flash-lite
 ```
 
-3. Run `npm start`. The decision inspector reports `gemini` after validating a provider response. The adapter calls Google's API with a structured output schema. Keep the API key in the server environment and use synthetic messages for this exercise. [generateContent REST API](https://ai.google.dev/api/generate-content) · [Structured outputs](https://ai.google.dev/gemini-api/docs/structured-output)
+3. Run `npm start`. The API reports `trace.source: gemini` after validating a provider response. The adapter calls Google's API with a structured output schema. Keep the API key in the server environment and use synthetic messages for this exercise. [generateContent REST API](https://ai.google.dev/api/generate-content) · [Structured outputs](https://ai.google.dev/gemini-api/docs/structured-output)
 
 Gemini 3.5 Flash-Lite is the default Gemini model. The adapter retries timeouts and temporary upstream errors such as HTTP 503, with exponential backoff and jitter. It allows three attempts, at most 14 seconds per attempt, and a 40-second total budget. A `Retry-After` delay can defer a retry within that budget. Authentication, quota and evidence validation failures end the request immediately.
 
 If Gemini still fails, chat keeps the draft, uses bounded local recognition, and reports `local-fallback` in the trace. The stateless assignment endpoint returns HTTP 503.
 
-## API
-
-```sh
-curl -s http://localhost:3000/api/booking \
-  -H 'Content-Type: application/json' \
-  -d '{"message":"Book padel tomorrow at 7 pm in Mezzeh for 90 minutes, 4 players."}'
-```
+## Assignment API
 
 The assignment's `POST /api/booking` checks synthetic availability and treats each message independently. Its result includes a normalized `request`, `status`, localized `reply`, `match`, `alternatives`, `clarification_field`, and a `trace` with current-turn evidence, extraction source, reference date and checks. Business statuses are `MATCH`, `ALTERNATIVES`, `NEEDS_INFO`, `NO_AVAILABILITY` and `OUT_OF_RANGE`. Provider errors return `EXTRACTION_ERROR` with HTTP 503.
 
-### Multi-turn chat
+### Optional browser court guide
+
+Open `http://localhost:3000` to try the separate multi-turn flow that links to FitCircle’s official court pages. Type Arabic to switch the interface right-to-left. Use **New booking** or **حجز جديد** to clear the draft.
 
 | Action | `POST /api/conversation` JSON |
 | --- | --- |
@@ -70,7 +66,7 @@ Current message + optional pending question
 - **Time.** `Intl.DateTimeFormat` resolves dates in `Asia/Damascus`. Relative dates are resolved on the turn where they are supplied. Weekday names use the next occurrence including today, with an explicit “next” on the same weekday advancing seven days. The exercise inventory covers today plus six days and excludes past starts. In that matcher, evening covers 17:00–23:00, morning 08:00–12:00 and afternoon 12:00–17:00. A session must fit inside the whole requested window. A bare 1–12 hour requires AM or PM. Canonical two-digit `HH:mm` is accepted as 24-hour time. Durations must be integers from 15 through 240 minutes.
 - **Clarification.** The court guide asks for one detail at a time to select useful links. The exercise matcher prioritizes known conflicts and out-of-range dates, then asks for sport, date, area, time, duration and player count. The pending question gives meaning to short replies.
 - **Court guide.** Chat can ask for a sport or date, offer neighborhoods from its reviewed venue links, and open official venue pages with a selected date. Sport-specific links for Top Academy Courts preserve football or basketball when requested. FitCircle handles current times and any booking on its own pages.
-- **Matching.** All candidates must fit one free interval completely, match the sport and meet player capacity. Exact requested date and area (or `any`) and exact start or flexible window produce a match. Synthetic inventory includes six invented venues across Mezzeh, Malki, Abu Rummaneh, Kafr Souseh, Dummar, Baramkeh, with a fixed weekday maintenance/gap pattern. Alternate starts use a 30-minute grid; requested off-grid starts are checked directly. Ranking score = `1440 × absolute date difference in days + 180 × neighborhood distance + time deviation in minutes`. Distances 0/1/2 represent same/adjacent/other mock area; these are illustrative, not measured travel times. Ties resolve by date, time, venue ID. Top alternatives prefer distinct venue/date pairs before filling remaining slots. Hard constraints are never relaxed; if no valid alternatives exist, ask whether the customer can change duration or group size.
+- **Matching.** The fixture uses five venue names and locations listed on FitCircle. Top Academy has separate entries for padel, football, and basketball. Opening times, gaps, and player capacities are synthetic exercise data. Slots must fit the full duration and respect sport and capacity. Alternative ranking weights date, neighborhood and time, then breaks ties deterministically. [FitCircle’s court directory](https://www.fitcircleapp.com/courts)
 - **Language.** Reply templates use Levantine Arabic or English. Mixed messages use the dominant script, with Arabic on ties. Bare numbers and neutral shorthands inherit the prior language. The slot details in the reply come from the deterministic decision.
 
 ## Test and evaluation
@@ -85,7 +81,7 @@ The original ten-message benchmark uses a fixed reference instant (`2026-11-25T1
 
 The HTTP regressions cover the reported exchange, Arabic and mixed-language conversations, corrections, reset, isolation, expiry, ambiguity, provider failures and booking constraints. Provider fixtures simulate HTTP responses. The live benchmark requires a Gemini key and network access and measures the provider-enabled pipeline.
 
-Phase 1 live verification is **PASS** for the rerun. Gemini 3.5 Flash-Lite returned a validated response for all 10 original cases and all four browser turns. The benchmark recovered from two real HTTP 503s on retry. [Verification details](RESULTS.md#live-gemini-verification) · [Live case results](RESULTS_LIVE.md)
+With the submitted venue fixture, the automated suite passed **83/83** and the offline benchmark passed **10/10**. The full live Gemini run passed **9/10**. The Arabic past-date case failed extraction on that run and succeeded in an isolated retry. [Offline results](RESULTS.md) · [Live case results](RESULTS_LIVE.md)
 
 ## Known limits and next steps
 

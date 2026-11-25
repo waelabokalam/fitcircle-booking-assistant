@@ -185,10 +185,10 @@ async function processTurn(message:string,extractor:Extractor,now:Date,mode:Conv
     if(conversational){
       return finish('ALTERNATIVES',ar?`ما في موعد مطابق بالتوفر التجريبي. أقرب الخيارات هي ${options}. شو اليوم أو الساعة أو المنطقة اللي بتحب تغيّرها؟`:`The mock inventory has no exact match. The closest options are ${options}. Which date, time or area would you like to change?`,null,alternatives);
     }
-    return finish('ALTERNATIVES',ar?`ما في موعد مطابق، بس في هالخيارات الأقرب: ${options}. أي واحد بناسبك؟`:`No exact match, but these are the closest available options: ${options}. Which works for you?`,null,alternatives);
+    return finish('ALTERNATIVES',ar?`ما في موعد مطابق بالتوفر التجريبي. أقرب الخيارات: ${options}. أي واحد بناسبك؟`:`No exact match in the mock schedule. The closest options are ${options}. Which works for you?`,null,alternatives);
   }
   trace.checks.push('No eligible venue/interval in seven days');
-  return finish('NO_AVAILABILITY',ar?'ما في موعد مناسب لهالرياضة والمدة وعدد اللاعبين خلال الأسبوع. فيك تغير عدد اللاعبين أو المدة؟':'No available slot fits that sport, duration and group size in the next seven days. Could you change the group size or duration?');
+  return finish('NO_AVAILABILITY',ar?'ما في موعد مناسب لهالرياضة والمدة وعدد اللاعبين بالجدول التجريبي. فيك تغير عدد اللاعبين أو المدة؟':'The mock schedule has no slot that fits that sport, duration and group size. Could you change the group size or duration?');
 }
 
 export async function book(message:string,extractor:Extractor,clock:()=>Date=()=>new Date()):Promise<Result> {

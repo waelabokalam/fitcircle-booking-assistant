@@ -15,7 +15,8 @@ const areas:Record<Exclude<Area,'any'>,[string,string]>={
   kafr_souseh:['كفر سوسة','Kafr Souseh'],
   dummar:['دمر','Dummar'],
   baramkeh:['البرامكة','Baramkeh'],
-  adawi:['العدوي','Adawi']
+  adawi:['العدوي','Adawi'],
+  al_wahda:['نادي الوحدة','Al Wahda Sports Club']
 };
 const englishList=new Intl.ListFormat('en');
 const arabicList=new Intl.ListFormat('ar');

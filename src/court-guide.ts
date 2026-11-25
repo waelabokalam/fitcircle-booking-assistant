@@ -3,21 +3,23 @@ import type {Area,CourtLink,Field,Request,Sport,Status} from './types.ts';
 const origin='https://www.fitcircleapp.com';
 const sports={padel:['Padel','بادل'],football:['Football','كرة قدم'],basketball:['Basketball','باسكت']} as const;
 type DirectorySport=keyof typeof sports;
-const neighborhoods={mezzeh:['Mezzeh','المزة'],dummar:['Dummar','دمر'],adawi:['Adawi','العدوي']} as const;
+const neighborhoods={
+  mezzeh:['Mezzeh','المزة'],dummar:['Dummar','دمر'],adawi:['Adawi','العدوي'],al_wahda:['Al Wahda Sports Club','نادي الوحدة']
+} as const;
 type Court={
   name:string;
   slug:string;
   sports:readonly DirectorySport[];
-  area?:keyof typeof neighborhoods;
+  area:keyof typeof neighborhoods;
   location:readonly [string,string];
 };
 // Public links from FitCircle's sport directories. Availability is read on the linked pages.
-const courts:readonly Court[]=[
+export const FITCIRCLE_COURTS:readonly Court[]=[
   {name:'Top Academy Courts',slug:'top-academy-courts',sports:['padel','football','basketball'],area:'mezzeh',location:['Madinat Al Shabab, Mezzeh','مدينة الشباب، المزة']},
   {name:'Trio Padel Arena',slug:'trio-padel-arena',sports:['padel'],area:'dummar',location:['Mashrou Dummar, Uptown Parking','مشروع دمر، موقف أبتاون']},
   {name:'G.M Padel',slug:'g-m-padel',sports:['padel'],area:'adawi',location:['Adawi, Military Sports Union','العدوي، الاتحاد الرياضي العسكري']},
   {name:"Let's Padel",slug:'let-s-padel',sports:['padel'],area:'adawi',location:['Adawi Highway','أوتوستراد العدوي']},
-  {name:'Ace Padel',slug:'ace-padel',sports:['padel'],location:['Al Wahda Sports Club','نادي الوحدة الرياضي']}
+  {name:'Ace Padel',slug:'ace-padel',sports:['padel'],area:'al_wahda',location:['Al Wahda Sports Club','نادي الوحدة الرياضي']}
 ];
 
 type Guide={status:Status;reply:string;field:Field|null;links:CourtLink[];suggestions?:string[]};
@@ -27,7 +29,7 @@ function supported(sport:Sport|null):sport is DirectorySport {
 }
 
 function linksFor(sport:DirectorySport,area:Area|null,date:string|null,ar:boolean):CourtLink[] {
-  return courts.filter(court=>court.sports.includes(sport)&&(!area||area==='any'||court.area===area)).map(court=>{
+  return FITCIRCLE_COURTS.filter(court=>court.sports.includes(sport)&&(!area||area==='any'||court.area===area)).map(court=>{
     const url=new URL(`/padel/${court.slug}`,origin);
     if(date)url.searchParams.set('date',date);
     if(sport!=='padel')url.searchParams.set('sport',sport);
@@ -67,8 +69,8 @@ export function guideCourts(request:Request,today:string,ambiguous:Field[],ar:bo
     return {status:'COURTS',reply,field:null,links};
   }
 
-  const choices=(!area||area==='any')?courts.filter(court=>court.sports.includes(sport)).flatMap(court=>
-    court.area?[neighborhoods[court.area][language]]:[]):[];
+  const choices=(!area||area==='any')?FITCIRCLE_COURTS.filter(court=>court.sports.includes(sport)).map(court=>
+    neighborhoods[court.area][language]):[];
   const unique=[...new Set(choices)];
   const suggestions=unique.length>1?unique:undefined;
   if(ambiguous.includes('area')){

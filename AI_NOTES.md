@@ -2,6 +2,8 @@
 
 ChatGPT helped scaffold the implementation, generate test cases, implement the date and availability engine and Gemini adapter, and draft the README. Gemini is the optional runtime language extractor. The application code calculates dates and decides availability. Verification includes offline tests, fixture tests, and real Gemini requests.
 
+During review I spotted a fabricated Abu Rummaneh venue in the ranked alternatives. I asked Codex to check FitCircle’s published listings and use verified venue names. The seven-day schedule and player limits remain synthetic, as the exercise requires.
+
 Engineering decisions and corrections recorded during implementation:
 
 - The proposed Next.js / external-package stack was replaced with native Node.js TypeScript because package installation was unavailable. This preserved runnable, testable code instead of shipping an unverified scaffold.

@@ -155,11 +155,11 @@
           "language": "en",
           "time_window": null
         },
-        "reply": "Good news! Mezzeh Padel Club — 2026-11-26, 19:00–20:30 is available for 4 players. This confirms mock availability, not a real reservation.",
+        "reply": "Good news! Top Academy Courts — 2026-11-26, 19:00–20:30 is available for 4 players. This confirms mock availability, not a real reservation.",
         "match": {
-          "venue_id": "mz-padel",
-          "venue": "Mezzeh Padel Club",
-          "venue_ar": "نادي المزة للبادل",
+          "venue_id": "top-academy-courts",
+          "venue": "Top Academy Courts",
+          "venue_ar": "Top Academy Courts",
           "area": "mezzeh",
           "sport": "padel",
           "date": "2026-11-26",
@@ -209,41 +209,41 @@
           "language": "en",
           "time_window": null
         },
-        "reply": "No exact match, but these are the closest available options: Malki Football Arena — 2026-11-26, 20:00–21:00; Kafr Souseh Sports Field — 2026-11-26, 19:00–20:00; Malki Football Arena — 2026-11-25, 19:00–20:00. Which works for you?",
+        "reply": "No exact match in the mock schedule. The closest options are Top Academy Courts — 2026-11-26, 20:00–21:00; Top Academy Courts — 2026-11-25, 19:00–20:00; Top Academy Courts — 2026-11-27, 19:00–20:00. Which works for you?",
         "match": null,
         "alternatives": [
           {
-            "venue_id": "mk-football",
-            "venue": "Malki Football Arena",
-            "venue_ar": "ملعب المالكي لكرة القدم",
-            "area": "malki",
+            "venue_id": "top-academy-courts-football",
+            "venue": "Top Academy Courts",
+            "venue_ar": "Top Academy Courts",
+            "area": "mezzeh",
             "sport": "football",
             "date": "2026-11-26",
             "start_time": "20:00",
             "end_time": "21:00",
-            "capacity": 12
+            "capacity": 16
           },
           {
-            "venue_id": "ks-football",
-            "venue": "Kafr Souseh Sports Field",
-            "venue_ar": "ملعب كفرسوسة الرياضي",
-            "area": "kafr_souseh",
+            "venue_id": "top-academy-courts-football",
+            "venue": "Top Academy Courts",
+            "venue_ar": "Top Academy Courts",
+            "area": "mezzeh",
             "sport": "football",
-            "date": "2026-11-26",
+            "date": "2026-11-25",
             "start_time": "19:00",
             "end_time": "20:00",
             "capacity": 16
           },
           {
-            "venue_id": "mk-football",
-            "venue": "Malki Football Arena",
-            "venue_ar": "ملعب المالكي لكرة القدم",
-            "area": "malki",
+            "venue_id": "top-academy-courts-football",
+            "venue": "Top Academy Courts",
+            "venue_ar": "Top Academy Courts",
+            "area": "mezzeh",
             "sport": "football",
-            "date": "2026-11-25",
+            "date": "2026-11-27",
             "start_time": "19:00",
             "end_time": "20:00",
-            "capacity": 12
+            "capacity": 16
           }
         ],
         "clarification_field": null,
@@ -270,13 +270,13 @@
     },
     {
       "id": "06",
-      "expected": "MATCH",
-      "actual": "MATCH",
+      "expected": "ALTERNATIVES",
+      "actual": "ALTERNATIVES",
       "pass": true,
       "message": "بدي padel بأبو رمانة بعد بكرا الساعة ٦ المسا لمدة ساعة، نحنا ٤",
       "errors": [],
       "result": {
-        "status": "MATCH",
+        "status": "ALTERNATIVES",
         "request": {
           "sport": "padel",
           "area": "abu_rummaneh",
@@ -287,19 +287,43 @@
           "language": "mixed",
           "time_window": null
         },
-        "reply": "تمام! متوفر بادل أبو رمانة — 2026-11-27, 18:00–19:00 لـ 4 لاعبين. هاد تأكيد توفر تجريبي، مو حجز فعلي.",
-        "match": {
-          "venue_id": "ar-padel",
-          "venue": "Abu Rummaneh Padel",
-          "venue_ar": "بادل أبو رمانة",
-          "area": "abu_rummaneh",
-          "sport": "padel",
-          "date": "2026-11-27",
-          "start_time": "18:00",
-          "end_time": "19:00",
-          "capacity": 4
-        },
-        "alternatives": [],
+        "reply": "ما في موعد مطابق بالتوفر التجريبي. أقرب الخيارات: Top Academy Courts — 2026-11-27, 18:00–19:00؛ Ace Padel — 2026-11-27, 18:00–19:00؛ G.M Padel — 2026-11-27, 18:00–19:00. أي واحد بناسبك؟",
+        "match": null,
+        "alternatives": [
+          {
+            "venue_id": "top-academy-courts",
+            "venue": "Top Academy Courts",
+            "venue_ar": "Top Academy Courts",
+            "area": "mezzeh",
+            "sport": "padel",
+            "date": "2026-11-27",
+            "start_time": "18:00",
+            "end_time": "19:00",
+            "capacity": 4
+          },
+          {
+            "venue_id": "ace-padel",
+            "venue": "Ace Padel",
+            "venue_ar": "Ace Padel",
+            "area": "al_wahda",
+            "sport": "padel",
+            "date": "2026-11-27",
+            "start_time": "18:00",
+            "end_time": "19:00",
+            "capacity": 4
+          },
+          {
+            "venue_id": "g-m-padel",
+            "venue": "G.M Padel",
+            "venue_ar": "G.M Padel",
+            "area": "adawi",
+            "sport": "padel",
+            "date": "2026-11-27",
+            "start_time": "18:00",
+            "end_time": "19:00",
+            "capacity": 4
+          }
+        ],
         "clarification_field": null,
         "trace": {
           "source": "local",
@@ -309,7 +333,7 @@
             "Extraction evidence validated",
             "Date, time, duration and capacity normalized in code",
             "Sport, capacity, full interval, horizon and past times checked",
-            "Exact area/date/time constraint satisfied"
+            "Alternatives ranked and diversified"
           ],
           "evidence": {
             "sport": "padel",
@@ -384,7 +408,7 @@
           "language": "en",
           "time_window": null
         },
-        "reply": "No available slot fits that sport, duration and group size in the next seven days. Could you change the group size or duration?",
+        "reply": "The mock schedule has no slot that fits that sport, duration and group size. Could you change the group size or duration?",
         "match": null,
         "alternatives": [],
         "clarification_field": null,
