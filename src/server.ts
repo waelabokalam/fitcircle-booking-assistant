@@ -4,19 +4,32 @@ import {existsSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {configuredExtractor} from './provider.ts';
 import {book} from './service.ts';
+import {createConversations} from './conversations.ts';
 import {availabilitySnapshot} from './availability.ts';
 import type {Extractor} from './types.ts';
 const PUBLIC=new URL('../public/',import.meta.url);
+const SESSION_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 export function createApp(extractor:Extractor,clock:()=>Date=()=>new Date()){
+  const conversation=createConversations(extractor,clock);
   return createServer(async(req,res)=>{
     const json=(status:number,data:unknown)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(data));};
     const path=(req.url??'').split('?')[0];
     try{
-      if(req.method==='POST'&&path==='/api/booking'){
+      if(req.method==='POST'&&(path==='/api/booking'||path==='/api/conversation')){
         if(!req.headers['content-type']?.toLowerCase().startsWith('application/json'))return json(415,{error:'Expected application/json'});
         const chunks:Buffer[]=[];let size=0;for await(const chunk of req){size+=chunk.length;if(size>16384){json(413,{error:'Request too large'});return;}chunks.push(chunk);}
         let body;try{body=JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{return json(400,{error:'Invalid JSON'});}
-        if(!body||typeof body.message!=='string'||!body.message.trim()||body.message.length>2000)return json(400,{error:'Message must contain 1–2000 characters'});
+        const chat=path==='/api/conversation';
+        if(chat && body && (body.session_id!==undefined && (typeof body.session_id!=='string'||!SESSION_ID.test(body.session_id)) ||
+          body.reset!==undefined && typeof body.reset!=='boolean'))return json(400,{error:'Invalid session_id or reset'});
+        const reset=chat && body?.reset===true;
+        if(!(reset && body.message===undefined) && (!body||typeof body.message!=='string'||!body.message.trim()||body.message.length>2000)){
+          return json(400,{error:'Message must contain 1–2000 characters'});
+        }
+        if(chat){
+          const turn=await conversation(body.session_id,body.message,reset);
+          return json(turn.code,turn.body);
+        }
         const result=await book(body.message,extractor,clock);return json(result.status==='EXTRACTION_ERROR'?503:200,result);
       }
       if(req.method==='GET'&&path==='/api/availability')return json(200,{mock:true,timezone:'Asia/Damascus',days:availabilitySnapshot(clock())});

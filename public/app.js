@@ -17,6 +17,71 @@ function inspect(r){const area=$('inspect');area.replaceChildren();const status=
  if(r.clarification_field){const card=el('div','decision-card');card.append(el('strong','','Clarification field'),el('small','',r.clarification_field));area.append(card);}
  const top=el('div','trace-head');top.append(el('p','metric-label','Normalized request'),el('span','source',`Extraction: ${r.trace.source}`));area.append(top,el('pre','json',JSON.stringify(r.request,null,2)),el('p','metric-label',`Decision checks · ${r.trace.reference_date}`));const checks=el('ul','checks');for(const c of r.trace.checks)checks.append(el('li','',c));area.append(checks);const details=el('details','evidence');details.append(el('summary','','Raw evidence'),el('pre','json',JSON.stringify(r.trace.evidence,null,2)));area.append(details);
 }
-async function run(){const message=$('message').value.trim();if(!message||$('send').disabled)return;$('send').disabled=true;$('status').textContent='CHECKING';$('status').removeAttribute('data-status');appendBubble(message,'customer');const pending=appendBubble('Checking mock availability…','assistant');try{const response=await fetch('/api/booking',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message})});const r=await response.json();if(!r.status)throw new Error(r.error??'Request failed');pending.textContent=r.reply;pending.dir='auto';inspect(r);}catch(e){pending.textContent='Could not complete the request. Please try again.';$('status').textContent='ERROR';$('status').dataset.status='EXTRACTION_ERROR';$('inspect').replaceChildren(el('p','sub','No decision was produced.'));}finally{$('send').disabled=false;$('conversation').scrollTop=$('conversation').scrollHeight;}}
+let sessionId;
+const welcome=$('conversation').firstElementChild.cloneNode(true);
+const emptyInspector=$('inspect').firstElementChild.cloneNode(true);
+function setBusy(busy){
+  $('send').disabled=busy;
+  $('reset').disabled=busy;
+}
+async function chat(body){
+  const response=await fetch('/api/conversation',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({...body,session_id:sessionId})
+  });
+  if(!response.ok)throw new Error('Conversation request failed');
+  const result=await response.json();
+  sessionId=result.session_id;
+  return result;
+}
+async function run(){
+  const composer=$('message');
+  const message=composer.value.trim();
+  if(!message||$('send').disabled)return;
+  setBusy(true);
+  composer.value='';
+  count();
+  $('status').textContent='CHECKING';
+  $('status').removeAttribute('data-status');
+  appendBubble(message,'customer');
+  const pending=appendBubble('…','assistant');
+  try{
+    const result=await chat({message});
+    pending.textContent=result.reply;
+    inspect(result);
+  }catch{
+    pending.textContent=/[\u0621-\u064a]/.test(message)
+      ? 'ما قدرت كمّل الطلب. فيك تجرّب مرة تانية؟'
+      : 'Could not complete the request. Please try again.';
+    if(!composer.value)composer.value=message;
+    count();
+    $('status').textContent='ERROR';
+    $('status').dataset.status='EXTRACTION_ERROR';
+    $('inspect').replaceChildren(el('p','sub','No decision was produced.'));
+  }finally{
+    setBusy(false);
+    $('conversation').scrollTop=$('conversation').scrollHeight;
+  }
+}
+async function reset(){
+  if($('reset').disabled)return;
+  setBusy(true);
+  try{
+    await chat({reset:true});
+    $('conversation').replaceChildren(welcome.cloneNode(true));
+    $('inspect').replaceChildren(emptyInspector.cloneNode(true));
+    $('status').textContent='READY';
+    $('status').removeAttribute('data-status');
+    $('message').value='';
+    count();
+    $('message').focus();
+  }catch{
+    appendBubble('Could not start a new booking. Please try again.','assistant');
+  }finally{
+    setBusy(false);
+  }
+}
+$('reset').addEventListener('click',reset);
 $('send').addEventListener('click',run);$('message').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();run();}});
 try{const r=await fetch('/api/availability');if(!r.ok)throw new Error();const data=await r.json();$('inventory').replaceChildren();for(const day of data.days){const block=el('div','inventory-day');block.append(el('h3','',day.date));for(const v of day.venues){block.append(el('p','',`${v.venue} · ${v.free.length?v.free.map(x=>`${x.start}–${x.end}`).join(', '):'No free slots'}`));}$('inventory').append(block);}}catch{$('inventory').textContent='Inventory could not be loaded.';}

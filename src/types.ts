@@ -14,5 +14,6 @@ export type Venue = { id:string; name:string; name_ar:string; area:Exclude<Area,
 export type Slot = { venue_id:string; venue:string; venue_ar:string; area:Exclude<Area,'any'>; sport:Sport; date:string; start_time:string; end_time:string; capacity:number };
 export type Status = 'MATCH' | 'ALTERNATIVES' | 'NEEDS_INFO' | 'NO_AVAILABILITY' | 'OUT_OF_RANGE' | 'EXTRACTION_ERROR';
 export type Extraction = { raw:RawIntent; source:'local'|'gemini'; };
-export type Extractor = (message:string) => Promise<Extraction>;
+export type ExtractionContext = { pendingField:Field|null; needsTimePeriod:boolean };
+export type Extractor = (message:string, context?:ExtractionContext) => Promise<Extraction>;
 export type Result = {status:Status; request:Request; reply:string; match:Slot|null; alternatives:Slot[]; clarification_field:Field|null; trace:{source:string; timezone:string; reference_date:string; checks:string[]; evidence:RawIntent|null}};
