@@ -1,5 +1,6 @@
 import type {TimeRequest} from './types.ts';
 export const ZONE = 'Asia/Damascus';
+export const MIN_DURATION_MINUTES = 15;
 const formatter = new Intl.DateTimeFormat('en-GB',{timeZone:ZONE,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
 export function localParts(now:Date) {
   const p = Object.fromEntries(formatter.formatToParts(now).map(x=>[x.type,x.value]));
@@ -74,7 +75,7 @@ export function resolveDuration(raw:string|null):number|null {
   else if(/نص ساعة|نصف ساعة|half an hour/.test(t))v=30;
   else if(/ساعتين|ساعتان|two hours/.test(t))v=120;
   else {const m=t.match(/(-?\d+(?:\.\d+)?)\s*(hours?|hrs?|h\b|ساع(?:ة|ه|ات)|minutes?|mins?|m\b|دقيق(?:ة|ه)|دقائق|دقايق)/);if(m)v=Number(m[1])*(/^(h|ساع)/.test(m[2])?60:1);else if(/an hour|one hour|لمدة ساعة|لمده ساعه|ساعة|ساعه/.test(t))v=60;}
-  return v!==null&&Number.isInteger(v)&&v>=15&&v<=240?v:null;
+  return v!==null&&Number.isInteger(v)&&v>=MIN_DURATION_MINUTES&&v<=240?v:null;
 }
 export function resolvePlayers(raw:string|null):number|null {
   if(!raw)return null;

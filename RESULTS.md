@@ -63,3 +63,7 @@ Benchmark cases 02 and 03 received HTTP 503 on their first attempt and returned 
 | `tmw` | Which area would you prefer? | `local-fallback` | `local-fallback` | `gemini` |
 
 The browser retained November 26 from the first turn and padel from the second turn, then finished by asking for the area. Before the retry change, three Flash diagnostic requests hit the 12-second deadline, and Google returned HTTP 503 on a Flash-Lite diagnostic replay of case 07. The current 40-second total budget still bounds recovery during a sustained outage.
+
+### Guided clarification
+
+The browser replay with Gemini validated all four turns. `i want to play tmw` displayed example sport start times, `padle` narrowed the area choices to Mezzeh and Abu Rummaneh, and `Mazzeh` displayed 09:00–12:00 and 18:00–22:00. The next reply stored `18:00` and asked for duration. The automated suite passed **79/79**, and the original offline benchmark passed **10/10**.

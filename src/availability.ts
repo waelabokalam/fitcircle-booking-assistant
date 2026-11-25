@@ -1,5 +1,5 @@
 import type {Venue,Slot,Request,TimeRequest,Area} from './types.ts';
-import {addDays,dayDistance,hhmm,localParts} from './time.ts';
+import {addDays,dayDistance,hhmm,localParts,MIN_DURATION_MINUTES} from './time.ts';
 export const VENUES:Venue[]=[
   {id:'mz-padel',name:'Mezzeh Padel Club',name_ar:'نادي المزة للبادل',area:'mezzeh',sport:'padel',capacity:4,intervals:[[540,720],[1080,1320]]},
   {id:'mk-football',name:'Malki Football Arena',name_ar:'ملعب المالكي لكرة القدم',area:'malki',sport:'football',capacity:12,intervals:[[960,1080],[1140,1380]]},
@@ -19,10 +19,36 @@ export function freeIntervals(venue:Venue,date:string):[number,number][] {
   if(venue.id==='mk-football'&&weekday===4)return [[960,1080],[1200,1380]];
   return venue.intervals.map(([s,e])=>[s,e]);
 }
+function nextStart(p:ReturnType<typeof localParts>,now:Date):number {
+  return p.minute+(p.second>0||now.getMilliseconds()>0?1:0);
+}
 export function availabilitySnapshot(now:Date,venues=VENUES) {
-  const p=localParts(now);const earliest=p.minute+(p.second>0||now.getMilliseconds()>0?1:0);
+  const p=localParts(now);const earliest=nextStart(p,now);
   return Array.from({length:7},(_,i)=>{const date=addDays(p.date,i);return {date,venues:venues.map(v=>({venue_id:v.id,venue:v.name,area:v.area,sport:v.sport,capacity:v.capacity,free:freeIntervals(v,date).map(([s,e])=>[i===0?Math.max(s,earliest):s,e]).filter(([s,e])=>s<e).map(([s,e])=>({start:hhmm(s),end:hhmm(e)}))}))};});
 }
+
+export function draftOpenings(request:Request,time:TimeRequest|null,now:Date) {
+  const {sport,area,date,number_of_players:players}=request;
+  const p=localParts(now);
+  if(!date||date<p.date||date>addDays(p.date,6))return [];
+  const duration=request.duration_minutes??MIN_DURATION_MINUTES;
+  const firstFutureMinute=date===p.date?nextStart(p,now):0;
+  const requestedStart=time?.kind==='window'?time.start:0;
+  const requestedEnd=time?.kind==='window'?time.end:1440;
+
+  return VENUES.filter(venue=>
+    (!sport||venue.sport===sport) &&
+    (!area||area==='any'||venue.area===area) &&
+    (!players||venue.capacity>=players)
+  ).flatMap(venue=>freeIntervals(venue,date).flatMap(([from,to])=>{
+    const earliest=Math.max(from,firstFutureMinute,requestedStart);
+    const start=time?.kind==='exact'?time.minute:earliest;
+    const end=Math.min(to,requestedEnd);
+    if(start<earliest||start+duration>end)return [];
+    return [{sport:venue.sport,area:venue.area,start,end}];
+  }));
+}
+
 function isFuture(date:string,start:number,now:Date){const p=localParts(now);return date>p.date||date===p.date&&(start>p.minute||start===p.minute&&p.second===0&&now.getMilliseconds()===0);}
 function timeDistance(t:TimeRequest,start:number,duration:number):number {if(t.kind==='exact')return Math.abs(start-t.minute);return Math.max(0,t.start-start,start+duration-t.end);}
 export function findSlots(request:Request,time:TimeRequest,now:Date,venues=VENUES):{match:Slot|null;alternatives:Slot[]} {

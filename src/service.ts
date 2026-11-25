@@ -3,6 +3,7 @@ import {FIELDS} from './types.ts';
 import {arabicReply, areaOf, isCorrection, languageOf, localExtractor, opensBooking, recognizeTurn, sportOf, startsNewBooking, validateEvidence} from './intent.ts';
 import {addDays, ambiguousClock, hhmm, localParts, normalizeText, resolveDate, resolveDuration, resolvePlayers, resolveTime, timePeriod, ZONE} from './time.ts';
 import {findSlots} from './availability.ts';
+import {availabilityHint} from './clarification.ts';
 
 const questions:Record<Field,[string,string]>={
   sport:['شو الرياضة اللي بدك تحجز إلها؟','Which sport would you like to book?'],
@@ -139,11 +140,19 @@ async function processTurn(message:string,extractor:Extractor,now:Date,conversat
   if(field){
     trace.checks.push(`Clarification needed: ${field}`);
     let reply=questions[field][ar?0:1];
+    if(conversational && field==='area')reply=ar?'بأي منطقة بتحب تلعب؟':'Where would you like to play?';
     if(conversational && field==='duration')reply=ar?'قديش بدك مدة الحجز بالدقايق؟':'How many minutes would you like to book for?';
     if(conversational && field==='start_time' && draft.ambiguousTime){
       const {hour,minute}=draft.ambiguousTime;
       const time=minute?`${hour}:${String(minute).padStart(2,'0')}`:String(hour);
       reply=ar?`قصدك الساعة ${time} الصبح ولا المسا؟`:`Did you mean ${time} AM or ${time} PM?`;
+    }else if(conversational && !local.ambiguous.includes(field)){
+      const hint=availabilityHint(field,request,draft.time,now,ar);
+      if(hint){
+        if(field==='start_time')reply=ar?'أي ساعة بتحب تبلّش؟':'What time would you like to start?';
+        reply=`${hint}\n${reply}`;
+        trace.checks.push('Suggested openings from mock inventory');
+      }
     }
     return finish('NEEDS_INFO',reply,null,[],field);
   }
