@@ -35,6 +35,11 @@ function describe(slot:Slot,ar:boolean){
   return `${ar?slot.venue_ar:slot.venue} — ${slot.date}, ${slot.start_time}–${slot.end_time}`;
 }
 
+function askTimePeriod({hour,minute}:NonNullable<BookingDraft['ambiguousTime']>,ar:boolean){
+  const time=minute?`${hour}:${String(minute).padStart(2,'0')}`:String(hour);
+  return ar?`قصدك الساعة ${time} الصبح ولا المسا؟`:`Did you mean ${time} AM or ${time} PM?`;
+}
+
 function neutralReply(message:string):boolean {
   return /^(?:[\d\s:.,]+(?:\s*(?:am|pm))?|a\.?m\.?|p\.?m\.?|padel|padle|paddle|tmw|tmr|2moro)[.!?؟]*$/.test(normalizeText(message));
 }
@@ -133,7 +138,9 @@ async function processTurn(message:string,extractor:Extractor,now:Date,mode:Conv
   if(mode==='directory'){
     const guide=guideCourts(request,today,local.ambiguous,ar);
     trace.checks.push('Prepared official FitCircle court links');
-    const turn=finish(guide.status,guide.reply,null,[],guide.field,guide.suggestions);
+    const turn=guide.status==='COURTS' && draft.ambiguousTime
+      ? finish('NEEDS_INFO',askTimePeriod(draft.ambiguousTime,ar),null,[],'start_time',ar?['الصبح','المسا']:['AM','PM'])
+      : finish(guide.status,guide.reply,null,[],guide.field,guide.suggestions);
     turn.result.court_links=guide.links;
     return turn;
   }
@@ -154,9 +161,7 @@ async function processTurn(message:string,extractor:Extractor,now:Date,mode:Conv
     if(conversational && field==='area')reply=ar?'بأي منطقة بتحب تلعب؟':'Where would you like to play?';
     if(conversational && field==='duration')reply=ar?'قديش بدك مدة الحجز بالدقايق؟':'How many minutes would you like to book for?';
     if(conversational && field==='start_time' && draft.ambiguousTime){
-      const {hour,minute}=draft.ambiguousTime;
-      const time=minute?`${hour}:${String(minute).padStart(2,'0')}`:String(hour);
-      reply=ar?`قصدك الساعة ${time} الصبح ولا المسا؟`:`Did you mean ${time} AM or ${time} PM?`;
+      reply=askTimePeriod(draft.ambiguousTime,ar);
     }else if(conversational && !local.ambiguous.includes(field)){
       const guidance=availabilityGuidance(field,request,draft.time,now,ar);
       if(guidance){

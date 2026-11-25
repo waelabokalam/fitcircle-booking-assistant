@@ -154,3 +154,16 @@ The replay used real Gemini calls, fresh Chrome profiles and the fixed Damascus 
 | Validated Gemini replies | 5/6 | 6/6 | 6/6 |
 
 All 12 updated replies passed, with a median of **1,250 ms** and a slowest turn of **1,683 ms**. In both updated runs, Gemini quoted `tmw` verbatim, Arabic preserved RTL and the Top Academy Courts link, and the mixed-language turn returned Trio Padel Arena. Diagnostics showed 12 primary and 12 backup attempts. The backup won once, recovering the mixed-language turn when 3.1 Flash-Lite returned HTTP 503. The other 11 backup requests were canceled. The automated suite passed **92/92** and the offline benchmark passed **10/10**.
+
+### Dual-model outage in Chrome
+
+The real local chat UI ran in fresh Chrome profiles against the default Gemini adapter with controlled provider failures. In one run, both model calls received HTTP 503. In the other, both response bodies stalled until the shared deadline aborted them. These runs measure fallback behavior with simulated Gemini failures.
+
+| Failure scenario | Correct browser turns | Local fallback replies | Slowest browser reply |
+|---|---:|---:|---:|
+| Both models return HTTP 503 | 8/8 | 8/8 | 717 ms |
+| Both response bodies stall | 8/8 | 8/8 | 3,040 ms |
+
+The before replay found that `لا خلينا الساعة ٨` silently cleared the exact start time and `المسا` then became an evening window. With the fix, the same correction asks AM or PM, keeps the court link visible, and stores **20:00** when the customer taps `المسا`. Mixed-language and English corrections changed the area and date while keeping padel, 20:00, 60 minutes and four players. The browser checked the Arabic and English fallback notice, RTL, the dated FitCircle links, and reset without stale values.
+
+A separate Chrome replay simulated provider recovery in the same chat. It verified that the notice appeared during the outage, cleared after the next valid provider response, and preserved the sport, area and date through the final time confirmation. The automated suite passed **93/93** and the offline benchmark passed **10/10**. A separate live rerun of the original ten stateless messages passed **10/10** with validated 3.5 Flash-Lite responses across 11 provider attempts.

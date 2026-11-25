@@ -5,7 +5,7 @@ import {setTimeout as delay} from 'node:timers/promises';
 import assert from 'node:assert/strict';
 import {createApp} from '../src/server.ts';
 import {emptyRaw, localExtractor} from '../src/intent.ts';
-import {geminiExtractor} from '../src/provider.ts';
+import {configuredExtractor,geminiExtractor} from '../src/provider.ts';
 import {addDays, localParts} from '../src/time.ts';
 import {REFERENCE} from '../scripts/cases.ts';
 import type {ConversationMode, ExtractionContext, Extractor, Result} from '../src/types.ts';
@@ -426,6 +426,54 @@ test('a slow Gemini response body is aborted and Arabic and mixed chat retain th
     assert.equal(second.request.language,'ar');
     assert.equal(second.request.date,'2026-11-26');
     assert.equal(second.court_links?.[0].url,`${courtOrigin}/padel/top-academy-courts?date=2026-11-26`);
+  },extractor,clock,'directory');
+});
+
+test('when both configured models fail, the court guide preserves bilingual corrections and the booking draft',()=> {
+  const attempts=new Map<string,string[]>();
+  const timedOut:AbortSignal[]=[];
+  const extractor=configuredExtractor({
+    env:{EXTRACTION_MODE:'gemini',GEMINI_API_KEY:'fixture'},
+    fetcher:async (url,request)=>{
+      const {customer_message:message}=JSON.parse(JSON.parse(String(request?.body)).contents[0].parts[0].text);
+      const model=String(url).match(/\/models\/([^:]+):/)?.[1];
+      assert.ok(model);
+      attempts.set(message,[...(attempts.get(message)??[]),model]);
+      if(message==='المسا'){
+        assert.ok(request?.signal);
+        timedOut.push(request.signal);
+        await delay(5000,undefined,{signal:request.signal});
+      }
+      return new Response('',{status:503});
+    }
+  });
+  return withServer(async url=>{
+    const sendTurn=chat(url);
+    async function fallback(message:string){
+      const response=await sendTurn(message);
+      assert.equal(response.trace.source,'local-fallback');
+      assert.deepEqual(attempts.get(message),['gemini-3.1-flash-lite','gemini-3.5-flash-lite']);
+      return response;
+    }
+    const first=await fallback('بدي ألعب بكرا');
+    assert.equal(first.clarification_field,'sport');
+    assert.match(first.reply,/شو الرياضة/);
+    const filled=await fallback('بدي padel بالمزة الساعة ٧ المسا لمدة ساعة، نحنا ٤');
+    assert.deepEqual(filled.request,{
+      sport:'padel',area:'mezzeh',date:'2026-11-26',start_time:'19:00',
+      duration_minutes:60,number_of_players:4,language:'mixed',time_window:null
+    });
+    const correction=await fallback('لا خلينا الساعة ٨');
+    assert.equal(correction.clarification_field,'start_time');
+    assert.deepEqual(correction.suggestions,['الصبح','المسا']);
+    assert.equal(correction.court_links?.[0].url,`${courtOrigin}/padel/top-academy-courts?date=2026-11-26`);
+    const time=await fallback('المسا');
+    assert.deepEqual(time.request,{...filled.request,start_time:'20:00',language:'ar'});
+    assert.equal(timedOut.length,2);
+    assert.ok(timedOut.every(signal=>signal.aborted));
+    const moved=await fallback('actually خلينا بدمر');
+    assert.deepEqual(moved.request,{...time.request,area:'dummar',language:'mixed'});
+    assert.equal(moved.court_links?.[0].url,`${courtOrigin}/padel/trio-padel-arena?date=2026-11-26`);
   },extractor,clock,'directory');
 });
 

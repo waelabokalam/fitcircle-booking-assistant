@@ -5,6 +5,9 @@
 #reset:focus-visible{outline:2px solid #80b69c;outline-offset:2px}
 #reset:disabled{opacity:.55;cursor:not-allowed}
 
+.fallback-note{margin:0;background:var(--light);color:var(--green);font-size:12px}
+.fallback-note:not(:empty){padding:7px 18px}
+
 .quick-replies{display:flex;flex-wrap:wrap;align-self:flex-start;gap:6px;max-width:100%;margin-block-start:-5px}
 .quick-reply{min-height:44px;padding:6px 12px;border:1px solid #a8c9b5;border-radius:8px;background:var(--light);color:var(--green);font-size:13px;font-weight:650}
 .quick-reply:hover:not(:disabled){border-color:var(--green);background:#d9ebdf}

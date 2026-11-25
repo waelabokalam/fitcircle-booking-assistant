@@ -41,6 +41,7 @@ const copy={
     status_ALTERNATIVES:'ALTERNATIVES',
     status_NO_AVAILABILITY:'NO AVAILABILITY',
     status_EXTRACTION_ERROR:'EXTRACTION ERROR',
+    fallbackNotice:'Using basic matching for now. You can keep adding or changing details.',
     sendError:'Could not complete the request. Please try again.',
     resetError:'Could not start a new booking. Please try again.',
     noDecision:'No decision was produced.'
@@ -86,6 +87,7 @@ const copy={
     status_ALTERNATIVES:'خيارات بديلة',
     status_NO_AVAILABILITY:'لا توجد مواعيد',
     status_EXTRACTION_ERROR:'تعذّر فهم الطلب',
+    fallbackNotice:'عم كمّل بالوضع الأساسي. فيك تضيف أو تغيّر التفاصيل.',
     sendError:'ما قدرت كمّل الطلب. فيك تجرّب مرة تانية؟',
     resetError:'ما قدرت بلّش حجز جديد. فيك تجرّب مرة تانية؟',
     noDecision:'ما قدرنا نعرض نتيجة للطلب.',
@@ -217,6 +219,15 @@ function setBusy(busy){
   $('reset').disabled=busy;
   for(const button of $('conversation').querySelectorAll('.quick-replies button'))button.disabled=busy;
 }
+function showFallback(visible){
+  const note=$('fallback-note');
+  if(visible){
+    if(!note.textContent)setCopy(note,'fallbackNotice');
+  }else{
+    delete note.dataset.i18n;
+    note.textContent='';
+  }
+}
 function showSuggestions(pending,suggestions){
   $('conversation').querySelector('.quick-replies')?.remove();
   if(!suggestions?.length)return;
@@ -287,6 +298,7 @@ async function run(suggestion){
     const result=await chat({message});
     pending.textContent=result.reply;
     pending.lang=containsArabic(result.reply)?'ar':'en';
+    showFallback(result.trace.source==='local-fallback');
     inspect(result);
     const firstCourt=showCourtLinks(pending,result.court_links);
     nextChoice=showSuggestions(pending,result.suggestions)??firstCourt;
@@ -309,6 +321,7 @@ async function reset(){
     await chat({reset:true});
     $('conversation').replaceChildren(welcome.cloneNode(true));
     $('inspect').replaceChildren(emptyInspector.cloneNode(true));
+    showFallback(false);
     setStatus('READY');
     translatePage();
     $('message').value='';
