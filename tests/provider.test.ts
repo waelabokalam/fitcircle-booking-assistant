@@ -1,12 +1,44 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {emptyRaw} from '../src/intent.ts';
-import {DEFAULT_GEMINI_MODEL,geminiExtractor} from '../src/provider.ts';
+import {configuredExtractor,DEFAULT_GEMINI_MODEL,geminiExtractor} from '../src/provider.ts';
 
 const message='padel tomorrow';
 const raw={...emptyRaw(),sport:'padel',date:'tomorrow'};
 const success=()=>Response.json({
   candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(raw)}]}}]
+});
+
+test('the configured provider defaults chat to 3.1 Flash-Lite and uses 3.5 Flash-Lite for stateless requests',async()=>{
+  const models:string[]=[];
+  const extractor=configuredExtractor({
+    env:{EXTRACTION_MODE:'gemini',GEMINI_API_KEY:'fixture'},
+    fetcher:async (url,request)=>{
+      const config=JSON.parse(String(request?.body)).generationConfig;
+      assert.deepEqual(config.thinkingConfig,{thinkingLevel:'MINIMAL'});
+      models.push(String(url).split('/').at(-1)!.split(':')[0]);
+      return success();
+    }
+  });
+  await extractor(message);
+  await extractor(message,{pendingField:null,needsTimePeriod:false});
+  assert.deepEqual(models,['gemini-3.5-flash-lite','gemini-3.1-flash-lite']);
+});
+
+test('an explicit chat model wins and a custom shared model remains available',async()=>{
+  const base={EXTRACTION_MODE:'gemini',GEMINI_API_KEY:'fixture',GEMINI_MODEL:'custom-booking'};
+  const models:string[]=[];
+  const fetcher:typeof fetch=async (url)=>{
+    models.push(String(url).split('/').at(-1)!.split(':')[0]);
+    return success();
+  };
+  const context={pendingField:null,needsTimePeriod:false};
+  const custom=configuredExtractor({env:base,fetcher});
+  await custom(message,context);
+  const override=configuredExtractor({env:{...base,GEMINI_CHAT_MODEL:'custom-chat'},fetcher});
+  await override(message,context);
+  await override(message);
+  assert.deepEqual(models,['custom-booking','custom-chat','custom-booking']);
 });
 
 test('Gemini recovers from a 503 followed by a response body timeout',async()=>{

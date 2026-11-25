@@ -24,11 +24,12 @@ The default `local` mode runs without credentials. See the ten test messages and
 EXTRACTION_MODE=gemini
 GEMINI_API_KEY=your_key_here
 GEMINI_MODEL=gemini-3.5-flash-lite
+GEMINI_CHAT_MODEL=gemini-3.1-flash-lite
 ```
 
 3. Run `npm start`. The API reports `trace.source: gemini` after validating a provider response. The adapter calls Google's API with a structured output schema. Keep the API key in the server environment and use synthetic messages for this exercise. [generateContent REST API](https://ai.google.dev/api/generate-content) · [Structured outputs](https://ai.google.dev/gemini-api/docs/structured-output)
 
-Gemini 3.5 Flash-Lite is the default model and uses explicit minimal thinking. The adapter uses a short extraction prompt and validates the structured response. Authentication, quota and evidence validation failures end the attempt immediately. [Gemini thinking settings](https://ai.google.dev/gemini-api/docs/thinking)
+Browser chat defaults to Gemini 3.1 Flash-Lite. The stateless API and benchmark default to Gemini 3.5 Flash-Lite. Set `GEMINI_CHAT_MODEL` to select a different model for chat. An explicit non-default `GEMINI_MODEL` also applies to chat when `GEMINI_CHAT_MODEL` is unset. Both Flash-Lite models use explicit minimal thinking, the same short prompt, and the same output validation. Authentication, quota and evidence validation failures end the attempt immediately. [Gemini thinking settings](https://ai.google.dev/gemini-api/docs/thinking)
 
 - **Browser chat** gives Gemini 3 seconds overall, including response-body reads and retry delays. A quick temporary failure can get one retry if there's enough time. When the budget expires or extraction fails, chat keeps the draft, uses bounded local recognition, and reports `local-fallback` in the trace.
 - **Stateless assignment API** allows up to three attempts, at most 14 seconds per attempt and 40 seconds overall. It returns HTTP 503 if extraction fails. Both routes respect `Retry-After` within their budgets.
@@ -77,6 +78,7 @@ npm test
 npm run eval -- --check  # read-only offline check, also used by CI
 npm run eval            # regenerates the offline benchmark artifacts
 npm run eval:live       # uses the configured Gemini key and regenerates the live artifacts
+GEMINI_MODEL=gemini-3.1-flash-lite npm run eval:live -- --check  # checks the chat model on the same cases
 npm run bench:availability
 ```
 
@@ -84,7 +86,7 @@ The original ten-message benchmark uses a fixed reference instant (`2026-11-25T1
 
 The HTTP regressions cover the reported exchange, Arabic and mixed-language conversations, corrections, reset, isolation, expiry, ambiguity, provider failures and booking constraints. Provider fixtures simulate HTTP responses. The live benchmark requires a Gemini key and network access and measures the provider-enabled pipeline.
 
-The latest automated suite passed **88/88**, and the offline and live Gemini benchmarks both passed **10/10**. The slowest of the four original browser turns fell from **5.87 s to 3.02 s**. Three updated turns used Gemini and one used local fallback. The availability benchmark took **38.7 ms** median for 1,200 calls, down from **1,089.5 ms** on the previous implementation. A separate comparison checked 2,160 identical match and ranking outcomes. [Browser and latency results](RESULTS.md#chat-latency) · [Live case results](RESULTS_LIVE.md)
+The latest automated suite passed **90/90**, and the offline and live Gemini benchmarks both passed **10/10**. In the browser model comparison, 3.1 Flash-Lite backed **7/12** turns within the deadline. The 3.5 Flash-Lite baseline backed **2/12** in the same comparison. The availability benchmark took **38.7 ms** median for 1,200 calls, down from **1,089.5 ms** on the previous implementation. A separate comparison checked 2,160 identical match and ranking outcomes. [Browser model comparison](RESULTS.md#gemini-model-comparison) · [Live case results](RESULTS_LIVE.md)
 
 ## Known limits and next steps
 

@@ -116,3 +116,25 @@ The original four replies passed in both runs. Their median fell from **2,423 ms
 | Updated assignment benchmark | 1,544 ms | 7,941 ms | 10/10 |
 
 The earlier baseline repeat reached **9,354 ms** p95. The new stateless run passed all ten cases, with a retry after HTTP 503 on case 09. The tail still varies across live runs. The three-second deadline applies to chat, where a slow or failed provider call triggers the local interpreter without clearing the draft. The latest automated suite passed **88/88** and the offline benchmark passed **10/10**. [Updated live per-case results](RESULTS_LIVE.md)
+
+### Gemini model comparison
+
+Each Chrome replay used a fresh profile, the same fixed Damascus clock, the same six inputs, and the three-second Gemini deadline. The two finalists were tested in both orders. The first four turns were the original replay. The last two checked Arabic RTL and the Mezzeh court link, then a mixed-language Dummar request after reset.
+
+| Model | Replay 1 Gemini | Replay 2 Gemini | Gemini on original turns | Median browser reply |
+|---|---:|---:|---:|---:|
+| 3.5 Flash-Lite | 2/6 | 0/6 | 1/8 | 3,021 ms |
+| 3.1 Flash-Lite | 4/6 | 3/6 | 5/8 | 2,343 ms |
+| 3.6 Flash | 1/6 | — | 1/4 | 3,026 ms |
+| 2.5 Flash-Lite | 0/6 | — | 0/4 | — |
+
+The 2.5 Flash-Lite requests returned HTTP 404 with the configured credential. Its fast fallbacks are excluded from the latency comparison. The 3.1 browser replies were correct on all 12 turns. Both Arabic follow-ups used fallback, preserved RTL and linked to Top Academy Courts. Both mixed-language follow-ups used Gemini and linked to Trio Padel Arena. The earlier 3.5 Flash-Lite replay in the preceding section had 4/6 Gemini responses, which illustrates how much coverage can vary across live runs of this size. [Gemini 3.1 Flash-Lite model documentation](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-lite)
+
+| Model on the ten original stateless cases | Passed with Gemini | Median | p95 |
+|---|---:|---:|---:|
+| 3.5 Flash-Lite from the preceding benchmark | 10/10 | 1,544 ms | 7,941 ms |
+| 3.1 Flash-Lite rerun | 10/10 | 1,646 ms | 8,983 ms |
+
+The 3.1 run includes a retry after HTTP 503 on the Arabic past-date case. The other nine cases succeeded on their first request. The browser now defaults to 3.1 and the stateless API uses 3.5 by default. [3.1 per-case results](RESULTS_LIVE.md)
+
+The final app was started with its regular local configuration and replayed once more. All six checks passed, with **5/6** Gemini responses and a **1,225 ms** median. The final `tmw` used fallback and retained the date and sport. The Arabic Mezzeh turn used Gemini in **1,122 ms** and preserved RTL. The mixed-language Dummar turn used Gemini in **1,327 ms**. The automated suite passed **90/90** and the offline benchmark passed **10/10**.

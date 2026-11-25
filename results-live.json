@@ -1,10 +1,10 @@
 {
   "mode": "Provider-enabled pipeline with live Gemini",
-  "model": "gemini-3.5-flash-lite",
+  "model": "gemini-3.1-flash-lite",
   "geminiResponses": 10,
   "latencyMs": {
-    "median": 1544,
-    "p95": 7941
+    "median": 1646,
+    "p95": 8983
   },
   "providerAttempts": 11,
   "reference": "2026-11-25T12:00:00.000Z",
@@ -54,7 +54,7 @@
         }
       },
       "runtime": {
-        "elapsedMs": 1419,
+        "elapsedMs": 1729,
         "httpStatuses": [
           200
         ]
@@ -106,7 +106,7 @@
         }
       },
       "runtime": {
-        "elapsedMs": 1039,
+        "elapsedMs": 1606,
         "httpStatuses": [
           200
         ]
@@ -155,7 +155,7 @@
         }
       },
       "runtime": {
-        "elapsedMs": 4191,
+        "elapsedMs": 1140,
         "httpStatuses": [
           200
         ]
@@ -215,7 +215,7 @@
         }
       },
       "runtime": {
-        "elapsedMs": 4675,
+        "elapsedMs": 3046,
         "httpStatuses": [
           200
         ]
@@ -299,7 +299,7 @@
         }
       },
       "runtime": {
-        "elapsedMs": 5460,
+        "elapsedMs": 1096,
         "httpStatuses": [
           200
         ]
@@ -383,7 +383,7 @@
         }
       },
       "runtime": {
-        "elapsedMs": 1669,
+        "elapsedMs": 997,
         "httpStatuses": [
           200
         ]
@@ -432,8 +432,9 @@
         }
       },
       "runtime": {
-        "elapsedMs": 1077,
+        "elapsedMs": 8983,
         "httpStatuses": [
+          503,
           200
         ]
       }
@@ -482,7 +483,7 @@
         }
       },
       "runtime": {
-        "elapsedMs": 928,
+        "elapsedMs": 1243,
         "httpStatuses": [
           200
         ]
@@ -531,9 +532,8 @@
         }
       },
       "runtime": {
-        "elapsedMs": 7941,
+        "elapsedMs": 3729,
         "httpStatuses": [
-          503,
           200
         ]
       }
@@ -581,7 +581,7 @@
         }
       },
       "runtime": {
-        "elapsedMs": 1159,
+        "elapsedMs": 1686,
         "httpStatuses": [
           200
         ]

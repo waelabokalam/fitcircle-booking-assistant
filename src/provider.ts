@@ -26,6 +26,8 @@ function responseSchema(groundedArea:string|null) {
   }}};
 }
 export const DEFAULT_GEMINI_MODEL='gemini-3.5-flash-lite';
+const DEFAULT_GEMINI_CHAT_MODEL='gemini-3.1-flash-lite';
+const MINIMAL_THINKING_MODELS=new Set([DEFAULT_GEMINI_CHAT_MODEL,DEFAULT_GEMINI_MODEL]);
 const BOOKING_POLICY={attempts:3,attemptMs:14_000,totalMs:40_000,backoffMs:1_000,jitterMs:250,minRetryMs:0};
 const CHAT_POLICY={attempts:2,attemptMs:3_000,totalMs:3_000,backoffMs:200,jitterMs:100,minRetryMs:500};
 const RETRYABLE_HTTP=new Set([408,500,502,503,504]);
@@ -94,7 +96,7 @@ export function geminiExtractor({apiKey,model,fetcher=fetch}:{apiKey:string;mode
         generationConfig:{
           responseMimeType:'application/json',responseJsonSchema:responseSchema(groundedArea),
           temperature:0,maxOutputTokens:1024,
-          ...(model===DEFAULT_GEMINI_MODEL?{thinkingConfig:{thinkingLevel:'MINIMAL'}}:{})
+          ...(MINIMAL_THINKING_MODELS.has(model)?{thinkingConfig:{thinkingLevel:'MINIMAL'}}:{})
         }
       })
     },context?CHAT_POLICY:BOOKING_POLICY);
@@ -107,13 +109,17 @@ export function geminiExtractor({apiKey,model,fetcher=fetch}:{apiKey:string;mode
     return {raw,source:'gemini'};
   };
 }
-export function configuredExtractor():Extractor {
-  const mode=process.env.EXTRACTION_MODE??'local';
+export function configuredExtractor({env=process.env,fetcher=fetch}={}):Extractor {
+  const mode=env.EXTRACTION_MODE??'local';
   if(mode==='local')return localExtractor;
   if(mode==='gemini'){
-    const apiKey=process.env.GEMINI_API_KEY;
+    const apiKey=env.GEMINI_API_KEY;
     if(!apiKey)return async ()=>{throw new Error('GEMINI_API_KEY is required for gemini mode');};
-    return geminiExtractor({apiKey,model:process.env.GEMINI_MODEL??DEFAULT_GEMINI_MODEL});
+    const model=env.GEMINI_MODEL??DEFAULT_GEMINI_MODEL;
+    const chatModel=env.GEMINI_CHAT_MODEL??(model===DEFAULT_GEMINI_MODEL?DEFAULT_GEMINI_CHAT_MODEL:model);
+    const booking=geminiExtractor({apiKey,model,fetcher});
+    const chat=chatModel===model?booking:geminiExtractor({apiKey,model:chatModel,fetcher});
+    return (message,context)=>(context?chat:booking)(message,context);
   }
   throw new Error('EXTRACTION_MODE must be local or gemini');
 }
