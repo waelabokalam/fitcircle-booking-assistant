@@ -10,4 +10,6 @@
 .quick-reply:hover:not(:disabled){border-color:var(--green);background:#d9ebdf}
 .quick-reply:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 .quick-reply:disabled{opacity:.55;cursor:not-allowed}
+.official-court-link{align-self:flex-start;padding:6px 0;color:var(--green);font-size:13px;font-weight:650;text-underline-offset:3px}
+.official-court-link:focus-visible{outline:2px solid var(--green);outline-offset:3px}
 footer a{color:var(--green);text-underline-offset:2px}

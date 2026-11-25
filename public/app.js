@@ -7,6 +7,8 @@ const examples=[
  ['Mixed · Arabic numerals','بدي padel بأبو رمانة بعد بكرا الساعة ٦ المسا لمدة ساعة، نحنا ٤'],
  ['English · no exact slot','Football in Malki tomorrow at 3 pm for 60 minutes, 10 players.']
 ];
+const fitCircleSite='https://www.fitcircleapp.com';
+const fitCircleSports={padel:['padel','البادل'],football:['football','كرة القدم'],basketball:['basketball','الباسكت']};
 const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node;};
 function appendBubble(text,cls){const b=el('div','bubble '+cls,text);b.dir='auto';$('conversation').append(b);$('conversation').scrollTop=$('conversation').scrollHeight;return b;}
 function count(){$('counter').textContent=`${$('message').value.length} / 2000`;}
@@ -43,6 +45,29 @@ function showSuggestions(pending,suggestions){
   pending.after(group);
   return group.firstElementChild;
 }
+function showOfficialCourtLink(pending,{sport,area,date}){
+  $('conversation').querySelector('.official-court-link')?.remove();
+  if(!date)return;
+
+  const arabic=/[\u0621-\u064a]/.test(pending.textContent);
+  const topAcademy=sport==='padel'&&area==='mezzeh';
+  const sportLabels=Object.hasOwn(fitCircleSports,sport)?fitCircleSports[sport]:null;
+  const url=new URL(topAcademy?'/padel/top-academy-courts':sportLabels?`/courts/${sport}`:'/courts',fitCircleSite);
+  if(topAcademy)url.searchParams.set('date',date);
+
+  let label=arabic?'شوف الملاعب على FitCircle':'Browse courts on FitCircle';
+  if(topAcademy){
+    label=arabic?'شوف أوقات Top Academy Courts على FitCircle':'See live times at Top Academy Courts';
+  }else if(sportLabels){
+    label=arabic?`شوف ملاعب ${sportLabels[1]} على FitCircle`:`Browse ${sportLabels[0]} courts on FitCircle`;
+  }
+  const link=el('a','official-court-link',label);
+  link.dir='auto';
+  link.href=url.href;
+  link.target='_blank';
+  link.rel='noopener noreferrer';
+  pending.after(link);
+}
 async function chat(body){
   const response=await fetch('/api/conversation',{
     method:'POST',
@@ -72,6 +97,7 @@ async function run(suggestion){
     const result=await chat({message});
     pending.textContent=result.reply;
     inspect(result);
+    showOfficialCourtLink(pending,result.request);
     nextChoice=showSuggestions(pending,result.suggestions);
   }catch{
     pending.textContent=/[\u0621-\u064a]/.test(message)

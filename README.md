@@ -87,7 +87,7 @@ Phase 1 live verification is **PASS** for the rerun. Gemini 3.5 Flash-Lite retur
 
 ## Known limits and next steps
 
-- All slots use a fictional inventory. A match only confirms mock availability. For real court information, use the [FitCircle court directory](https://www.fitcircleapp.com/courts).
+- All chat slots use a fictional inventory. Once a date is known, the chat also links to FitCircle's court directory or a relevant sport listing. Padel in Mezzeh links to Top Academy Courts with the selected date. Live slots are shown on FitCircle itself. [FitCircle court directory](https://www.fitcircleapp.com/courts) · [Top Academy Courts](https://www.fitcircleapp.com/padel/top-academy-courts)
 - The grammar and normalizers cover a bounded set of expressions, sports and areas. Complex negation, unusual date and time expressions, and unsupported terminology may require rephrasing. Multiple independent bookings need separate drafts.
 - The session ID acts as a bearer token on the local demo. State lives in a single process and disappears on restart. A browser reload starts a new chat. The mock neighborhood distances are fixed.
 - A sustained provider disruption can delay a reply for up to 40 seconds before local fallback in chat or HTTP 503 from the stateless endpoint.
