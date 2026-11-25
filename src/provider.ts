@@ -30,6 +30,8 @@ const DEFAULT_GEMINI_CHAT_MODEL='gemini-3.1-flash-lite';
 const MINIMAL_THINKING_MODELS=new Set([DEFAULT_GEMINI_CHAT_MODEL,DEFAULT_GEMINI_MODEL]);
 const BOOKING_POLICY={attempts:3,attemptMs:14_000,totalMs:40_000,backoffMs:1_000,jitterMs:250,minRetryMs:0};
 const CHAT_POLICY={attempts:2,attemptMs:3_000,totalMs:3_000,backoffMs:200,jitterMs:100,minRetryMs:500};
+const CHAT_ATTEMPT_POLICY={...CHAT_POLICY,attempts:1};
+const CHAT_BACKUP_DELAY_MS=650;
 const RETRYABLE_HTTP=new Set([408,500,502,503,504]);
 const RETRYABLE_NETWORK=new Set([
   'ECONNRESET','ETIMEDOUT','EAI_AGAIN','UND_ERR_SOCKET','UND_ERR_CONNECT_TIMEOUT',
@@ -49,9 +51,9 @@ function isTransientNetworkError(error:unknown,signal:AbortSignal):boolean {
   return typeof code==='string' && RETRYABLE_NETWORK.has(code);
 }
 
-async function fetchGemini(fetcher:typeof fetch,url:string,request:RequestInit,policy:typeof BOOKING_POLICY) {
+async function fetchGemini(fetcher:typeof fetch,url:string,request:RequestInit,policy:typeof BOOKING_POLICY,sharedSignal?:AbortSignal) {
   const deadline=performance.now()+policy.totalMs;
-  const totalSignal=AbortSignal.timeout(policy.totalMs);
+  const totalSignal=sharedSignal??AbortSignal.timeout(policy.totalMs);
   for(let attempt=1;;attempt++){
     const signal=policy.attemptMs<policy.totalMs
       ? AbortSignal.any([totalSignal,AbortSignal.timeout(policy.attemptMs)])
@@ -80,33 +82,58 @@ async function fetchGemini(fetcher:typeof fetch,url:string,request:RequestInit,p
   }
 }
 
-export function geminiExtractor({apiKey,model,fetcher=fetch}:{apiKey:string;model:string;fetcher?:typeof fetch}):Extractor {
+export function geminiExtractor({apiKey,model,backupModel,fetcher=fetch}:{
+  apiKey:string;model:string;backupModel?:string;fetcher?:typeof fetch
+}):Extractor {
   if(!apiKey)throw new Error('GEMINI_API_KEY is required for gemini mode');
-  if(!/^[a-zA-Z0-9._-]+$/.test(model))throw new Error('Invalid GEMINI_MODEL');
+  const modelName=/^[a-zA-Z0-9._-]+$/;
+  if(!modelName.test(model) || (backupModel!==undefined && !modelName.test(backupModel)))throw new Error('Invalid GEMINI_MODEL');
   return async (message,context)=>{
     const input=context
       ? {customer_message:message,pending_field:context.pendingField,needs_time_period:context.needsTimePeriod}
       : {customer_message:message};
     const groundedArea=recognizeTurn(message,context).raw.area;
-    const body=await fetchGemini(fetcher,`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
-      method:'POST',headers:{'content-type':'application/json','x-goog-api-key':apiKey},
-      body:JSON.stringify({
-        systemInstruction:{parts:[{text:instructions}]},
-        contents:[{role:'user',parts:[{text:JSON.stringify(input)}]}],
-        generationConfig:{
-          responseMimeType:'application/json',responseJsonSchema:responseSchema(groundedArea),
-          temperature:0,maxOutputTokens:1024,
-          ...(MINIMAL_THINKING_MODELS.has(model)?{thinkingConfig:{thinkingLevel:'MINIMAL'}}:{})
-        }
-      })
-    },context?CHAT_POLICY:BOOKING_POLICY);
-    const candidate=body.candidates?.[0];
-    if(!candidate||candidate.finishReason!=='STOP')throw new Error('Incomplete model output');
-    const text=candidate.content?.parts?.filter((p:{thought?:boolean})=>!p.thought).map((p:{text?:string})=>p.text??'').join('');
-    if(!text)throw new Error('Empty model output');
-    const raw=validateEvidence(JSON.parse(text),message);
-    if(groundedArea && raw.area && raw.area!==groundedArea)throw new Error('Unsupported evidence: area');
-    return {raw,source:'gemini'};
+    const generationConfig={
+      responseMimeType:'application/json',responseJsonSchema:responseSchema(groundedArea),
+      temperature:0,maxOutputTokens:1024
+    };
+    const contents=[{role:'user',parts:[{text:JSON.stringify(input)}]}];
+    async function extract(requestModel:string,policy:typeof BOOKING_POLICY,signal?:AbortSignal){
+      signal?.throwIfAborted();
+      const body=await fetchGemini(fetcher,`https://generativelanguage.googleapis.com/v1beta/models/${requestModel}:generateContent`,{
+        method:'POST',headers:{'content-type':'application/json','x-goog-api-key':apiKey},
+        body:JSON.stringify({
+          systemInstruction:{parts:[{text:instructions}]},
+          contents,
+          generationConfig:{
+            ...generationConfig,
+            ...(MINIMAL_THINKING_MODELS.has(requestModel)?{thinkingConfig:{thinkingLevel:'MINIMAL'}}:{})
+          }
+        })
+      },policy,signal);
+      const candidate=body.candidates?.[0];
+      if(!candidate||candidate.finishReason!=='STOP')throw new Error('Incomplete model output');
+      const text=candidate.content?.parts?.filter((p:{thought?:boolean})=>!p.thought).map((p:{text?:string})=>p.text??'').join('');
+      if(!text)throw new Error('Empty model output');
+      const raw=validateEvidence(JSON.parse(text),message);
+      if(groundedArea && raw.area && raw.area!==groundedArea)throw new Error('Unsupported evidence: area');
+      signal?.throwIfAborted();
+      return {raw,source:'gemini' as const};
+    }
+
+    if(!context||!backupModel||backupModel===model)return extract(model,context?CHAT_POLICY:BOOKING_POLICY);
+
+    // Both attempts share the chat deadline. Commit the first validated result only.
+    const cancel=new AbortController();
+    const signal=AbortSignal.any([AbortSignal.timeout(CHAT_POLICY.totalMs),cancel.signal]);
+    try{
+      return await Promise.any([
+        extract(model,CHAT_ATTEMPT_POLICY,signal),
+        delay(CHAT_BACKUP_DELAY_MS,undefined,{signal}).then(()=>extract(backupModel,CHAT_ATTEMPT_POLICY,signal))
+      ]);
+    }finally{
+      cancel.abort();
+    }
   };
 }
 export function configuredExtractor({env=process.env,fetcher=fetch}={}):Extractor {
@@ -118,7 +145,8 @@ export function configuredExtractor({env=process.env,fetcher=fetch}={}):Extracto
     const model=env.GEMINI_MODEL??DEFAULT_GEMINI_MODEL;
     const chatModel=env.GEMINI_CHAT_MODEL??(model===DEFAULT_GEMINI_MODEL?DEFAULT_GEMINI_CHAT_MODEL:model);
     const booking=geminiExtractor({apiKey,model,fetcher});
-    const chat=chatModel===model?booking:geminiExtractor({apiKey,model:chatModel,fetcher});
+    const backupModel=chatModel===DEFAULT_GEMINI_CHAT_MODEL && model===DEFAULT_GEMINI_MODEL?model:undefined;
+    const chat=chatModel===model?booking:geminiExtractor({apiKey,model:chatModel,backupModel,fetcher});
     return (message,context)=>(context?chat:booking)(message,context);
   }
   throw new Error('EXTRACTION_MODE must be local or gemini');

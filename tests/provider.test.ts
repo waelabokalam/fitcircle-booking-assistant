@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
+import {setTimeout as delay} from 'node:timers/promises';
 import {emptyRaw} from '../src/intent.ts';
 import {configuredExtractor,DEFAULT_GEMINI_MODEL,geminiExtractor} from '../src/provider.ts';
 
@@ -39,6 +40,39 @@ test('an explicit chat model wins and a custom shared model remains available',a
   await override(message,context);
   await override(message);
   assert.deepEqual(models,['custom-booking','custom-chat','custom-booking']);
+});
+
+test('the chat backup returns verbatim tmw evidence and cancels the slow primary',async()=>{
+  const calls:{model:string;signal:AbortSignal}[]=[];
+  const expected={...emptyRaw(),date:'tmw'};
+  const extractor=configuredExtractor({
+    env:{EXTRACTION_MODE:'gemini',GEMINI_API_KEY:'fixture'},
+    fetcher:async (url,request)=>{
+      assert.ok(request?.signal);
+      const model=String(url).split('/').at(-1)!.split(':')[0];
+      calls.push({model,signal:request.signal});
+      if(model==='gemini-3.1-flash-lite')await delay(5000,undefined,{signal:request.signal});
+      return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(expected)}]}}]});
+    }
+  });
+  assert.deepEqual(await extractor('tmw',{pendingField:null,needsTimePeriod:false}),{raw:expected,source:'gemini'});
+  assert.deepEqual(calls.map(call=>call.model),['gemini-3.1-flash-lite','gemini-3.5-flash-lite']);
+  assert.equal(calls[0].signal,calls[1].signal);
+  assert.equal(calls[0].signal.aborted,true);
+});
+
+test('the first model to return invalid evidence cannot win the chat race',async()=>{
+  const extractor=configuredExtractor({
+    env:{EXTRACTION_MODE:'gemini',GEMINI_API_KEY:'fixture'},
+    fetcher:async (url)=>{
+      const date=String(url).includes('gemini-3.1-flash-lite')?'tomorrow':'tmw';
+      const evidence={...emptyRaw(),date};
+      return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(evidence)}]}}]});
+    }
+  });
+  const result=await extractor('tmw',{pendingField:null,needsTimePeriod:false});
+  assert.equal(result.source,'gemini');
+  assert.equal(result.raw.date,'tmw');
 });
 
 test('Gemini recovers from a 503 followed by a response body timeout',async()=>{

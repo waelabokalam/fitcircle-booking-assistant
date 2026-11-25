@@ -138,3 +138,19 @@ The 2.5 Flash-Lite requests returned HTTP 404 with the configured credential. It
 The 3.1 run includes a retry after HTTP 503 on the Arabic past-date case. The other nine cases succeeded on their first request. The browser now defaults to 3.1 and the stateless API uses 3.5 by default. [3.1 per-case results](RESULTS_LIVE.md)
 
 The final app was started with its regular local configuration and replayed once more. All six checks passed, with **5/6** Gemini responses and a **1,225 ms** median. The final `tmw` used fallback and retained the date and sport. The Arabic Mezzeh turn used Gemini in **1,122 ms** and preserved RTL. The mixed-language Dummar turn used Gemini in **1,327 ms**. The automated suite passed **90/90** and the offline benchmark passed **10/10**.
+
+### Browser deadline replay
+
+The replay used real Gemini calls, fresh Chrome profiles and the fixed Damascus benchmark clock. The previous implementation had fallen back on `tmw`. In a fresh before run on that implementation, `tmw` succeeded and the mixed-language turn hit the provider timeout. The updated chat starts a second model after 650 ms if validation is still pending. Both models share the three-second deadline.
+
+| Browser input | Fresh before | Updated run 1 | Updated run 2 |
+|---|---:|---:|---:|
+| `i want to book tmw` | 1,863 ms | 1,683 ms | 1,097 ms |
+| `padle` | 1,453 ms | 1,354 ms | 1,070 ms |
+| `paddle` | 1,103 ms | 1,205 ms | 1,133 ms |
+| `tmw` | 1,229 ms | 1,126 ms | 1,209 ms |
+| `المزة` | 1,523 ms | 1,428 ms | 1,602 ms |
+| `بدي ألعب padel بكرا بدمر` | 3,020 ms, fallback | 1,554 ms | 1,291 ms |
+| Validated Gemini replies | 5/6 | 6/6 | 6/6 |
+
+All 12 updated replies passed, with a median of **1,250 ms** and a slowest turn of **1,683 ms**. In both updated runs, Gemini quoted `tmw` verbatim, Arabic preserved RTL and the Top Academy Courts link, and the mixed-language turn returned Trio Padel Arena. Diagnostics showed 12 primary and 12 backup attempts. The backup won once, recovering the mixed-language turn when 3.1 Flash-Lite returned HTTP 503. The other 11 backup requests were canceled. The automated suite passed **92/92** and the offline benchmark passed **10/10**.

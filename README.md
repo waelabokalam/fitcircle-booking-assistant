@@ -31,8 +31,8 @@ GEMINI_CHAT_MODEL=gemini-3.1-flash-lite
 
 Browser chat defaults to Gemini 3.1 Flash-Lite. The stateless API and benchmark default to Gemini 3.5 Flash-Lite. Set `GEMINI_CHAT_MODEL` to select a different model for chat. An explicit non-default `GEMINI_MODEL` also applies to chat when `GEMINI_CHAT_MODEL` is unset. Both Flash-Lite models use explicit minimal thinking, the same short prompt, and the same output validation. Authentication, quota and evidence validation failures end the attempt immediately. [Gemini thinking settings](https://ai.google.dev/gemini-api/docs/thinking)
 
-- **Browser chat** gives Gemini 3 seconds overall, including response-body reads and retry delays. A quick temporary failure can get one retry if there's enough time. When the budget expires or extraction fails, chat keeps the draft, uses bounded local recognition, and reports `local-fallback` in the trace.
-- **Stateless assignment API** allows up to three attempts, at most 14 seconds per attempt and 40 seconds overall. It returns HTTP 503 if extraction fails. Both routes respect `Retry-After` within their budgets.
+- **Browser chat** gives Gemini 3 seconds overall, including response-body reads. With the default model pair, it starts 3.1 Flash-Lite and starts 3.5 Flash-Lite after 650 ms if no response has passed validation. The first valid reply wins and the outstanding request is canceled. This can use two provider requests for one turn. A custom model uses the single-model policy with at most one retry. When extraction fails, chat keeps the draft, uses bounded local recognition, and reports `local-fallback`.
+- **Stateless assignment API** allows up to three attempts, at most 14 seconds per attempt and 40 seconds overall. It returns HTTP 503 if extraction fails. Same-model retries respect `Retry-After` when the delay fits.
 
 ## Assignment API
 
@@ -86,7 +86,7 @@ The original ten-message benchmark uses a fixed reference instant (`2026-11-25T1
 
 The HTTP regressions cover the reported exchange, Arabic and mixed-language conversations, corrections, reset, isolation, expiry, ambiguity, provider failures and booking constraints. Provider fixtures simulate HTTP responses. The live benchmark requires a Gemini key and network access and measures the provider-enabled pipeline.
 
-The latest automated suite passed **90/90**, and the offline and live Gemini benchmarks both passed **10/10**. In the browser model comparison, 3.1 Flash-Lite backed **7/12** turns within the deadline. The 3.5 Flash-Lite baseline backed **2/12** in the same comparison. The availability benchmark took **38.7 ms** median for 1,200 calls, down from **1,089.5 ms** on the previous implementation. A separate comparison checked 2,160 identical match and ranking outcomes. [Browser model comparison](RESULTS.md#gemini-model-comparison) · [Live case results](RESULTS_LIVE.md)
+The latest automated suite passed **92/92** and the offline benchmark passed **10/10**. Two live browser replays returned **12/12** validated Gemini replies within three seconds, including the Arabic and mixed-language turns. The latest ten-case Gemini benchmark passed **10/10**. The availability benchmark took **38.7 ms** median for 1,200 calls, down from **1,089.5 ms** on the previous implementation. A separate comparison checked 2,160 identical match and ranking outcomes. [Browser deadline results](RESULTS.md#browser-deadline-replay) · [Live case results](RESULTS_LIVE.md)
 
 ## Known limits and next steps
 
