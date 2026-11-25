@@ -4,3 +4,10 @@
 #reset:hover:not(:disabled){background:#d9ebdf}
 #reset:focus-visible{outline:2px solid #80b69c;outline-offset:2px}
 #reset:disabled{opacity:.55;cursor:not-allowed}
+
+.quick-replies{display:flex;flex-wrap:wrap;align-self:flex-start;gap:6px;max-width:100%;margin-block-start:-5px}
+.quick-reply{min-height:44px;padding:6px 12px;border:1px solid #a8c9b5;border-radius:8px;background:var(--light);color:var(--green);font-size:13px;font-weight:650}
+.quick-reply:hover:not(:disabled){border-color:var(--green);background:#d9ebdf}
+.quick-reply:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.quick-reply:disabled{opacity:.55;cursor:not-allowed}
+footer a{color:var(--green);text-underline-offset:2px}

@@ -3,7 +3,7 @@ import {FIELDS} from './types.ts';
 import {arabicReply, areaOf, isCorrection, languageOf, localExtractor, opensBooking, recognizeTurn, sportOf, startsNewBooking, validateEvidence} from './intent.ts';
 import {addDays, ambiguousClock, hhmm, localParts, normalizeText, resolveDate, resolveDuration, resolvePlayers, resolveTime, timePeriod, ZONE} from './time.ts';
 import {findSlots} from './availability.ts';
-import {availabilityHint} from './clarification.ts';
+import {availabilityGuidance} from './clarification.ts';
 
 const questions:Record<Field,[string,string]>={
   sport:['شو الرياضة اللي بدك تحجز إلها؟','Which sport would you like to book?'],
@@ -92,10 +92,11 @@ async function processTurn(message:string,extractor:Extractor,now:Date,conversat
   const {request,arabic:ar}=draft;
   const context=conversational?{pendingField:draft.pendingField,needsTimePeriod:draft.ambiguousTime!==null}:undefined;
   const trace:Result['trace']={source:'unavailable',timezone:ZONE,reference_date:today,checks:[],evidence:null};
-  const finish=(status:Result['status'],reply:string,match:Slot|null=null,alternatives:Slot[]=[],field:Field|null=null)=>{
+  const finish=(status:Result['status'],reply:string,match:Slot|null=null,alternatives:Slot[]=[],field:Field|null=null,suggestions?:string[])=>{
     draft.pendingField=field;
     draft.lastStatus=status;
     const result:Result={status,request,reply,match,alternatives,clarification_field:field,trace};
+    if(suggestions)result.suggestions=suggestions;
     return {result,draft};
   };
 
@@ -140,6 +141,7 @@ async function processTurn(message:string,extractor:Extractor,now:Date,conversat
   if(field){
     trace.checks.push(`Clarification needed: ${field}`);
     let reply=questions[field][ar?0:1];
+    let suggestions:string[]|undefined;
     if(conversational && field==='area')reply=ar?'بأي منطقة بتحب تلعب؟':'Where would you like to play?';
     if(conversational && field==='duration')reply=ar?'قديش بدك مدة الحجز بالدقايق؟':'How many minutes would you like to book for?';
     if(conversational && field==='start_time' && draft.ambiguousTime){
@@ -147,14 +149,15 @@ async function processTurn(message:string,extractor:Extractor,now:Date,conversat
       const time=minute?`${hour}:${String(minute).padStart(2,'0')}`:String(hour);
       reply=ar?`قصدك الساعة ${time} الصبح ولا المسا؟`:`Did you mean ${time} AM or ${time} PM?`;
     }else if(conversational && !local.ambiguous.includes(field)){
-      const hint=availabilityHint(field,request,draft.time,now,ar);
-      if(hint){
+      const guidance=availabilityGuidance(field,request,draft.time,now,ar);
+      if(guidance){
         if(field==='start_time')reply=ar?'أي ساعة بتحب تبلّش؟':'What time would you like to start?';
-        reply=`${hint}\n${reply}`;
+        reply=`${guidance.hint}\n${reply}`;
+        suggestions=guidance.suggestions;
         trace.checks.push('Suggested openings from mock inventory');
       }
     }
-    return finish('NEEDS_INFO',reply,null,[],field);
+    return finish('NEEDS_INFO',reply,null,[],field,suggestions);
   }
   if(conversational && !updated){
     trace.checks.push('No clear update to the draft');

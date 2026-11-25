@@ -23,6 +23,25 @@ const emptyInspector=$('inspect').firstElementChild.cloneNode(true);
 function setBusy(busy){
   $('send').disabled=busy;
   $('reset').disabled=busy;
+  for(const button of $('conversation').querySelectorAll('.quick-replies button'))button.disabled=busy;
+}
+function showSuggestions(pending,suggestions){
+  $('conversation').querySelector('.quick-replies')?.remove();
+  if(!suggestions?.length)return;
+
+  const arabic=/[\u0621-\u064a]/.test(pending.textContent);
+  const group=el('div','quick-replies');
+  group.dir=arabic?'rtl':'ltr';
+  group.setAttribute('role','group');
+  group.setAttribute('aria-label',arabic?'ردود مقترحة':'Suggested replies');
+  for(const suggestion of suggestions){
+    const button=el('button','quick-reply',suggestion);
+    button.type='button';
+    button.addEventListener('click',()=>run(suggestion));
+    group.append(button);
+  }
+  pending.after(group);
+  return group.firstElementChild;
 }
 async function chat(body){
   const response=await fetch('/api/conversation',{
@@ -35,32 +54,37 @@ async function chat(body){
   sessionId=result.session_id;
   return result;
 }
-async function run(){
+async function run(suggestion){
   const composer=$('message');
-  const message=composer.value.trim();
+  const message=(suggestion??composer.value).trim();
   if(!message||$('send').disabled)return;
   setBusy(true);
-  composer.value='';
-  count();
+  if(suggestion===undefined){
+    composer.value='';
+    count();
+  }
   $('status').textContent='CHECKING';
   $('status').removeAttribute('data-status');
   appendBubble(message,'customer');
   const pending=appendBubble('…','assistant');
+  let nextChoice;
   try{
     const result=await chat({message});
     pending.textContent=result.reply;
     inspect(result);
+    nextChoice=showSuggestions(pending,result.suggestions);
   }catch{
     pending.textContent=/[\u0621-\u064a]/.test(message)
       ? 'ما قدرت كمّل الطلب. فيك تجرّب مرة تانية؟'
       : 'Could not complete the request. Please try again.';
-    if(!composer.value)composer.value=message;
+    if(suggestion===undefined&&!composer.value)composer.value=message;
     count();
     $('status').textContent='ERROR';
     $('status').dataset.status='EXTRACTION_ERROR';
     $('inspect').replaceChildren(el('p','sub','No decision was produced.'));
   }finally{
     setBusy(false);
+    if(suggestion!==undefined&&document.activeElement===document.body)(nextChoice??composer).focus({preventScroll:true});
     $('conversation').scrollTop=$('conversation').scrollHeight;
   }
 }
@@ -83,5 +107,5 @@ async function reset(){
   }
 }
 $('reset').addEventListener('click',reset);
-$('send').addEventListener('click',run);$('message').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();run();}});
+$('send').addEventListener('click',()=>run());$('message').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();run();}});
 try{const r=await fetch('/api/availability');if(!r.ok)throw new Error();const data=await r.json();$('inventory').replaceChildren();for(const day of data.days){const block=el('div','inventory-day');block.append(el('h3','',day.date));for(const v of day.venues){block.append(el('p','',`${v.venue} · ${v.free.length?v.free.map(x=>`${x.start}–${x.end}`).join(', '):'No free slots'}`));}$('inventory').append(block);}}catch{$('inventory').textContent='Inventory could not be loaded.';}

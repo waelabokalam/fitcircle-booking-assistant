@@ -74,21 +74,28 @@ test('date-first chat suggests times, narrows to sport and area, and accepts a s
   assert.equal(first.clarification_field,'sport');
   assert.match(first.reply,/padel at 09:00/);
   assert.match(first.reply,/tennis at 08:00/);
+  assert.ok(first.suggestions);
+  assert.deepEqual(first.suggestions,['Padel','Football','Tennis','Basketball']);
   assert.equal(first.match,null);
 
-  const area=await turn('padel');
+  const area=await turn(first.suggestions[0]);
   assert.match(area.reply,/Mezzeh and Abu Rummaneh/);
   assert.match(area.reply,/Where would you like to play\?$/);
-  const time=await turn('Mazzeh');
+  assert.ok(area.suggestions);
+  assert.deepEqual(area.suggestions,['Mezzeh','Abu Rummaneh']);
+  const time=await turn(area.suggestions[0]);
   assert.equal(time.clarification_field,'start_time');
   assert.match(time.reply,/in Mezzeh include 09:00–12:00 and 18:00–22:00/);
   assert.doesNotMatch(time.reply,/Abu Rummaneh/);
   assert.match(time.reply,/What time would you like to start\?$/);
+  assert.ok(time.suggestions);
+  assert.deepEqual(time.suggestions,['09:00','18:00']);
   assert.equal(time.match,null);
 
-  const picked=await turn('18:00');
+  const picked=await turn(time.suggestions[1]);
   assert.equal(picked.request.start_time,'18:00');
   assert.equal(picked.clarification_field,'duration');
+  assert.equal(picked.suggestions,undefined);
 }));
 
 test('clarification suggestions follow capacity, past-time, duration and maintenance constraints',()=>withServer(async url=>{
@@ -99,12 +106,14 @@ test('clarification suggestions follow capacity, past-time, duration and mainten
   const gap=await send(url,'football tomorrow at 7 pm for an hour');
   assert.match(gap.reply,/Kafr Souseh/);
   assert.doesNotMatch(gap.reply,/Malki/);
+  assert.deepEqual(gap.suggestions,['Kafr Souseh']);
   const today=await send(url,'padel in Mezzeh today');
   assert.match(today.reply,/18:00–22:00/);
   assert.doesNotMatch(today.reply,/09:00/);
-  const maintenance=await send(url,'padel in Mezzeh on Tuesday');
+  const maintenance=await send(url,'padel in Mazzeh on Tuesday');
   assert.match(maintenance.reply,/09:00–12:00/);
   assert.doesNotMatch(maintenance.reply,/18:00/);
+  assert.deepEqual(maintenance.suggestions,['09:00']);
   const duration=await send(url,'padel tomorrow at 11:30 am for an hour');
   assert.match(duration.reply,/Abu Rummaneh/);
   assert.doesNotMatch(duration.reply,/Mezzeh/);
@@ -115,6 +124,7 @@ test('Levantine chat uses short answers and offers only mock availability',()=>w
   const area=await turn('بدي احجز بادل بكرا');
   assert.equal(area.clarification_field,'area');
   assert.match(area.reply,/المزة.*أبو رمانة/);
+  assert.deepEqual(area.suggestions,['المزة','أبو رمانة']);
   const opening=await turn('بالمزة');
   assert.equal(opening.clarification_field,'start_time');
   assert.match(opening.reply,/18:00–22:00/);
@@ -404,4 +414,5 @@ test('original booking endpoint ignores chat IDs and returns independent single-
   assert.equal(single.request.sport,null);
   assert.equal(single.request.date,'2026-11-27');
   assert.equal(single.clarification_field,'sport');
+  assert.equal(single.suggestions,undefined);
 }));

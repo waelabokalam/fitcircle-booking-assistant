@@ -67,3 +67,5 @@ The browser retained November 26 from the first turn and padel from the second t
 ### Guided clarification
 
 The browser replay with Gemini validated all four turns. `i want to play tmw` displayed example sport start times, `padle` narrowed the area choices to Mezzeh and Abu Rummaneh, and `Mazzeh` displayed 09:00–12:00 and 18:00–22:00. The next reply stored `18:00` and asked for duration. The automated suite passed **79/79**, and the original offline benchmark passed **10/10**.
+
+The tappable version was also verified in the browser with **4/4** validated Gemini responses. The replay entered the first message, selected **Padel** with the keyboard, and clicked **Mezzeh** and **18:00**. The draft retained all three choices and removed the previous buttons after each turn. The demo footer links to the verified [FitCircle court directory](https://www.fitcircleapp.com/courts).

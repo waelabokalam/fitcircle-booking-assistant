@@ -16,4 +16,4 @@ export type Status = 'MATCH' | 'ALTERNATIVES' | 'NEEDS_INFO' | 'NO_AVAILABILITY'
 export type Extraction = { raw:RawIntent; source:'local'|'gemini'; };
 export type ExtractionContext = { pendingField:Field|null; needsTimePeriod:boolean };
 export type Extractor = (message:string, context?:ExtractionContext) => Promise<Extraction>;
-export type Result = {status:Status; request:Request; reply:string; match:Slot|null; alternatives:Slot[]; clarification_field:Field|null; trace:{source:string; timezone:string; reference_date:string; checks:string[]; evidence:RawIntent|null}};
+export type Result = {status:Status; request:Request; reply:string; match:Slot|null; alternatives:Slot[]; clarification_field:Field|null; suggestions?:string[]; trace:{source:string; timezone:string; reference_date:string; checks:string[]; evidence:RawIntent|null}};

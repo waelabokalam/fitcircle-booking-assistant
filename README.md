@@ -11,7 +11,7 @@ npm start
 # Open http://localhost:3000
 ```
 
-The default `local` mode uses rule-based extraction and runs offline. To try the chat, send `i want to play tmw` for sports and example start times, then `padle` for neighborhoods and `Mezzeh` for open time windows. Use **New booking** or type `start over` to clear the draft. The server binds to loopback for local evaluation.
+The default `local` mode uses rule-based extraction and runs offline. To try the chat, send `i want to play tmw`, then tap **Padel**, **Mezzeh**, and an open start time such as **18:00**. You can also type your reply. Use **New booking** or type `start over` to clear the draft. The server binds to loopback for local evaluation.
 
 ### Enable actual LLM extraction
 
@@ -50,6 +50,8 @@ The assignment's `POST /api/booking` treats each message independently. Its resu
 
 Message turns return the booking result plus a `session_id`. Always use the ID from the latest response. Reset rotates the ID and clears its draft. A reset request may also contain the first `message` of the new booking. Unknown or expired UUIDs start an empty session with a new ID. Concurrent actions on one in-flight session return HTTP 409. Input errors return 400, 413 or 415. `GET /api/availability` exposes synthetic inventory and `GET /api/health` reports liveness.
 
+When the mock schedule has eligible options for the next question, chat includes a `suggestions` array. Each string can be sent as the next `message` with the same session ID.
+
 ## Design decisions
 
 ```text
@@ -85,7 +87,7 @@ Phase 1 live verification is **PASS** for the rerun. Gemini 3.5 Flash-Lite retur
 
 ## Known limits and next steps
 
-- All slots use a fictional inventory. A match only confirms mock availability.
+- All slots use a fictional inventory. A match only confirms mock availability. For real court information, use the [FitCircle court directory](https://www.fitcircleapp.com/courts).
 - The grammar and normalizers cover a bounded set of expressions, sports and areas. Complex negation, unusual date and time expressions, and unsupported terminology may require rephrasing. Multiple independent bookings need separate drafts.
 - The session ID acts as a bearer token on the local demo. State lives in a single process and disappears on restart. A browser reload starts a new chat. The mock neighborhood distances are fixed.
 - A sustained provider disruption can delay a reply for up to 40 seconds before local fallback in chat or HTTP 503 from the stateless endpoint.

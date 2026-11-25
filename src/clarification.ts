@@ -19,7 +19,7 @@ const areas:Record<Exclude<Area,'any'>,[string,string]>={
 const englishList=new Intl.ListFormat('en');
 const arabicList=new Intl.ListFormat('ar');
 
-export function availabilityHint(field:Field,request:Request,time:TimeRequest|null,now:Date,ar:boolean):string|null {
+export function availabilityGuidance(field:Field,request:Request,time:TimeRequest|null,now:Date,ar:boolean):{hint:string;suggestions:string[]}|null {
   const {date,sport,area}=request;
   if(!date||!['sport','area','start_time'].includes(field))return null;
   const openings=draftOpenings(request,time,now);
@@ -38,25 +38,37 @@ export function availabilityHint(field:Field,request:Request,time:TimeRequest|nu
     }
     const examples=list.format([...starts].map(([name,start])=>
       ar?`${sports[name][language]} الساعة ${hhmm(start)}`:`${sports[name][language]} at ${hhmm(start)}`));
-    return ar?`من المواعيد التجريبية المتاحة ${when}: ${examples}.`:`Mock openings ${when} include ${examples}.`;
+    const suggestions=[...starts.keys()].map(name=>{
+      const label=sports[name][language];
+      return ar?label:label[0].toUpperCase()+label.slice(1);
+    });
+    const hint=ar?`من المواعيد التجريبية المتاحة ${when}: ${examples}.`:`Mock openings ${when} include ${examples}.`;
+    return {hint,suggestions};
   }
 
   if(field==='area' && sport){
-    const names=list.format([...new Set(openings.map(opening=>areas[opening.area][language]))]);
+    const suggestions=[...new Set(openings.map(opening=>areas[opening.area][language]))];
+    const names=list.format(suggestions);
     const label=sports[sport][language];
-    return ar?`في مواعيد تجريبية للعب ${label} ${when} بـ${names}.`:`For ${label}, there are mock openings ${when} in ${names}.`;
+    const hint=ar?`في مواعيد تجريبية للعب ${label} ${when} بـ${names}.`:`For ${label}, there are mock openings ${when} in ${names}.`;
+    return {hint,suggestions};
   }
 
   if(field==='start_time'){
     const location=area && area!=='any'?areas[area][language]:null;
-    const windows=openings.map(opening=>{
-      const hours=`${hhmm(opening.start)}–${hhmm(opening.end)}`;
-      return location?hours:`${areas[opening.area][language]} ${hours}`;
-    });
-    const examples=list.format([...new Set(windows)].slice(0,4));
-    return ar
+    const windows=new Map(openings.map(opening=>{
+      const start=hhmm(opening.start);
+      const hours=`${start}–${hhmm(opening.end)}`;
+      const label=location?hours:`${areas[opening.area][language]} ${hours}`;
+      return [label,start] as const;
+    }));
+    const shown=[...windows].slice(0,4);
+    const examples=list.format(shown.map(([label])=>label));
+    const suggestions=[...new Set(shown.map(([,start])=>start))].sort();
+    const hint=ar
       ? `المواعيد التجريبية ${when}${location?` بـ${location}`:''}: ${examples}.`
       : `Mock openings ${when}${location?` in ${location}`:''} include ${examples}.`;
+    return {hint,suggestions};
   }
   return null;
 }
