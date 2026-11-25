@@ -73,3 +73,5 @@ The tappable version was also verified in the browser with **4/4** validated Gem
 ### Official court guide
 
 The current browser flow types a date-first request and taps **Padel** then **Mezzeh**. It shows named court links and no synthetic times. All three turns used validated Gemini responses. Opening the emitted link showed Top Academy Courts and its time picker on the selected date, Thursday, November 26. The automated suite passed **82/82**, and the original stateless exercise benchmark passed **10/10**. [Top Academy Courts](https://www.fitcircleapp.com/padel/top-academy-courts?date=2026-11-26)
+
+The Arabic browser replay verified that typing the first Arabic letter translated the controls and mirrored the workspace. All **3/3** chat turns used validated Gemini responses. **حجز جديد** kept Arabic active, typing a time left the language in Arabic, and typing an English message restored the left-to-right layout.

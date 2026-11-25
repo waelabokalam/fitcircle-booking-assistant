@@ -13,6 +13,8 @@ npm start
 
 The default `local` mode uses rule-based extraction. To try the court guide, send `i want to play tmw`, tap **Padel**, choose **Mezzeh**, then open **Top Academy Courts**. The court page opens on the selected date. You can also type your reply. Use **New booking** or type `start over` to clear the draft. The server binds to loopback for local evaluation.
 
+Typing Arabic switches the interface to Arabic and right-to-left immediately. **إرسال** sends the message, and **حجز جديد** clears the draft while keeping Arabic active. Typing English switches back.
+
 ### Enable actual LLM extraction
 
 1. Obtain a Gemini API key using a supported account. Check that the chosen model and region are available to you.

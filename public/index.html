@@ -1,17 +1,17 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FitCircle — Booking assistant</title><link rel="stylesheet" href="/style.css"><script type="module" src="/app.js"></script>
+<title data-i18n="pageTitle">FitCircle — Court guide</title><link rel="stylesheet" href="/style.css"><script type="module" src="/app.js"></script>
 </head>
 <body>
-<header class="topbar"><div class="wrap topbar-inner"><a class="brand" href="/"><span class="mark">fc.</span><span>fitcircle<span class="brand-dot">.</span><small>Court guide</small></span></a><div class="environment">COURTS <span class="sep">·</span> DAMASCUS</div></div></header>
+<header class="topbar"><div class="wrap topbar-inner"><a class="brand" href="/"><span class="mark" dir="ltr" lang="en">fc.</span><span><span dir="ltr" lang="en">fitcircle<span class="brand-dot">.</span></span><small data-i18n="courtGuide">Court guide</small></span></a><div class="environment" data-i18n="environment">COURTS · DAMASCUS</div></div></header>
 <main class="wrap">
-<section class="intro"><h1>Find a court in Damascus.</h1><p>Tell the chat what you want to play, then open a court on FitCircle to see its live times.</p></section>
-<section class="workspace" aria-label="Booking workspace">
-<div class="panel chat"><div class="panel-head"><div class="avatar">fc</div><h2>FitCircle assistant</h2><button id="reset" class="tag" type="button">New booking</button></div><div class="conversation" id="conversation" aria-live="polite"><div class="bubble assistant" dir="auto">Hi! Send a booking request in Arabic or English.<br>أهلا! ابعتلي طلب الحجز بالعربي أو الإنجليزي.</div></div><div class="composer"><label for="message">Customer message</label><textarea id="message" rows="3" maxlength="2000" dir="auto" placeholder="e.g. بدي احجز بادل بكرا بالمزة..."></textarea><div class="compose-bottom"><span class="sub" id="counter">0 / 2000</span><button id="send" type="button">Send <span aria-hidden="true">↗</span></button></div></div></div>
-<div class="panel inspector"><div class="panel-head"><div><h2>Decision inspector</h2><p class="sub">Structured request &amp; deterministic outcome</p></div><span class="tag" id="status">READY</span></div><div id="inspect"><div class="empty"><span class="empty-icon">[ ··· ]</span><h3>Waiting for a request</h3><p>Run an example to inspect the extracted JSON, evidence and booking decision.</p></div></div></div>
+<section class="intro"><h1 data-i18n="heading">Find a court in Damascus.</h1><p data-i18n="intro">Tell the chat what you want to play, then open a court on FitCircle to see its live times.</p></section>
+<section class="workspace" aria-label="Booking workspace" data-i18n-aria="workspace">
+<div class="panel chat"><div class="panel-head"><div class="avatar" dir="ltr" lang="en">fc</div><h2 data-i18n="assistant">FitCircle assistant</h2><button id="reset" class="tag" type="button" data-i18n="reset">New booking</button></div><div class="conversation" id="conversation" aria-live="polite"><div class="bubble assistant" dir="auto" data-i18n="welcome">Hi! Tell me what you’d like to play in Arabic or English.</div></div><div class="composer"><label for="message" data-i18n="message">Customer message</label><textarea id="message" rows="3" maxlength="2000" dir="auto" placeholder="e.g. Padel in Mezzeh tomorrow" data-i18n-placeholder="placeholder"></textarea><div class="compose-bottom"><span class="sub" id="counter" dir="ltr">0 / 2000</span><button id="send" type="button"><span data-i18n="send">Send</span><span class="send-icon" aria-hidden="true">↗</span></button></div></div></div>
+<div class="panel inspector"><div class="panel-head"><div><h2 data-i18n="inspector">Decision inspector</h2><p class="sub" data-i18n="inspectorCaption">Interpreted request and evidence</p></div><span class="tag" id="status" data-i18n="status_READY">READY</span></div><div id="inspect"><div class="empty"><span class="empty-icon">[ ··· ]</span><h3 data-i18n="waiting">Waiting for a request</h3><p data-i18n="waitingCaption">Send a message to see how it was interpreted.</p></div></div></div>
 </section>
-<section class="examples"><div class="section-head"><div><p class="eyebrow">TRY THE SYSTEM</p><h2>Example requests</h2></div><p class="sub">Click to fill the message.</p></div><div class="example-grid" id="examples"></div></section>
-<footer>Live times and booking on <a href="https://www.fitcircleapp.com/courts" target="_blank" rel="noopener noreferrer">FitCircle</a></footer>
+<section class="examples"><div class="section-head"><div><h2 data-i18n="examples">Example requests</h2></div><p class="sub" data-i18n="examplesCaption">Click to fill the message.</p></div><div class="example-grid" id="examples"></div></section>
+<footer><span data-i18n="footer">Live times and booking on</span> <a href="https://www.fitcircleapp.com/courts" target="_blank" rel="noopener noreferrer" dir="ltr" lang="en">FitCircle</a></footer>
 </main></body></html>
