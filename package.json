@@ -9,6 +9,7 @@
     "dev": "node --disable-warning=ExperimentalWarning --experimental-strip-types --watch src/server.ts",
     "test": "node --disable-warning=ExperimentalWarning --experimental-strip-types --test tests/*.test.ts",
     "eval": "node --disable-warning=ExperimentalWarning --experimental-strip-types scripts/evaluate.ts",
-    "eval:live": "node --disable-warning=ExperimentalWarning --experimental-strip-types scripts/evaluate.ts --live"
+    "eval:live": "node --disable-warning=ExperimentalWarning --experimental-strip-types scripts/evaluate.ts --live",
+    "bench:availability": "node --disable-warning=ExperimentalWarning --experimental-strip-types scripts/benchmark-availability.ts"
   }
 }

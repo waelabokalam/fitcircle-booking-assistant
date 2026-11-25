@@ -61,7 +61,7 @@ Current message + optional pending question
    → Localized reply and decision trace
 ```
 
-- **Trust boundary.** Gemini receives the current message and, in chat, the pending field and a flag for whether that field needs AM/PM. The response must contain six nullable verbatim phrases. Validation rejects missing or extra keys and invented evidence. Recognized local phrases and conflicts take precedence, and Gemini can supply evidence where local recognition finds none. The court guide supplies reviewed links, and the exercise engine supplies synthetic slots.
+- **Trust boundary.** Gemini receives the current message and, in chat, the pending field and a flag for whether that field needs AM/PM. When local recognition finds one unambiguous neighborhood, the per-request schema limits the model to that exact quote or null. Otherwise it can quote an unfamiliar neighborhood from the message. The server validates all six fields verbatim and gives local conflicts precedence. The court guide supplies reviewed links, and the exercise engine supplies synthetic slots. [Gemini structured output](https://ai.google.dev/gemini-api/docs/structured-output) · [Google LangExtract source-grounding example](https://github.com/google/langextract)
 - **Draft lifecycle.** The server stores the normalized request, the pending field, any unresolved clock reading, and the previous outcome in memory. New values replace only the affected fields. A matched draft supports explicit revisions such as “actually make it Friday.” A regular request after a match starts fresh. While a draft is active, **New booking** and phrases such as “start over” explicitly clear it. The store holds up to 1,000 sessions and expires idle drafts after 30 minutes. Each browser page has a separate session.
 - **Time.** `Intl.DateTimeFormat` resolves dates in `Asia/Damascus`. Relative dates are resolved on the turn where they are supplied. Weekday names use the next occurrence including today, with an explicit “next” on the same weekday advancing seven days. The exercise inventory covers today plus six days and excludes past starts. In that matcher, evening covers 17:00–23:00, morning 08:00–12:00 and afternoon 12:00–17:00. A session must fit inside the whole requested window. A bare 1–12 hour requires AM or PM. Canonical two-digit `HH:mm` is accepted as 24-hour time. Durations must be integers from 15 through 240 minutes.
 - **Clarification.** The court guide asks for one detail at a time to select useful links. The exercise matcher prioritizes known conflicts and out-of-range dates, then asks for sport, date, area, time, duration and player count. The pending question gives meaning to short replies.
@@ -73,15 +73,17 @@ Current message + optional pending question
 
 ```sh
 npm test
-npm run eval       # updates the offline benchmark table in RESULTS.md
-npm run eval:live  # genuine Gemini calls; writes RESULTS_LIVE.md and results-live.json
+npm run eval -- --check  # read-only offline check, also used by CI
+npm run eval            # regenerates the offline benchmark artifacts
+npm run eval:live       # uses the configured Gemini key and regenerates the live artifacts
+npm run bench:availability
 ```
 
 The original ten-message benchmark uses a fixed reference instant (`2026-11-25T12:00:00Z`, 15:00 Damascus) and checks normalized fields, statuses, clarification fields, and venue/start where applicable. The regular demo uses the current clock. See the executed offline and browser findings in [RESULTS.md](RESULTS.md).
 
 The HTTP regressions cover the reported exchange, Arabic and mixed-language conversations, corrections, reset, isolation, expiry, ambiguity, provider failures and booking constraints. Provider fixtures simulate HTTP responses. The live benchmark requires a Gemini key and network access and measures the provider-enabled pipeline.
 
-With the submitted venue fixture, the automated suite passed **83/83** and the offline benchmark passed **10/10**. The full live Gemini run passed **9/10**. The Arabic past-date case failed extraction on that run and succeeded in an isolated retry. [Offline results](RESULTS.md) · [Live case results](RESULTS_LIVE.md)
+The automated suite passed **85/85**, the offline benchmark passed **10/10**, and two live Gemini runs each passed **10/10**. The availability benchmark took **38.7 ms** median for 1,200 calls, down from **1,089.5 ms** on the previous implementation. A separate comparison checked 2,160 identical match and ranking outcomes. [Offline and performance results](RESULTS.md) · [Live case results](RESULTS_LIVE.md)
 
 ## Known limits and next steps
 
@@ -104,7 +106,7 @@ src/conversations.ts  In-memory session lifecycle
 src/server.ts         HTTP transport and static demo
 public/              Browser demo (no dependencies)
 tests/               Domain and HTTP / provider contract tests
-scripts/             Reproducible 10-message evaluation
+scripts/             Reproducible 10-message evaluation and matcher benchmark
 ```
 
 AI assistance and verification details are recorded in [AI_NOTES.md](AI_NOTES.md).

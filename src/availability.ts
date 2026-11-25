@@ -60,28 +60,58 @@ export function draftOpenings(request:Request,time:TimeRequest|null,now:Date) {
   }));
 }
 
-function isFuture(date:string,start:number,now:Date){const p=localParts(now);return date>p.date||date===p.date&&(start>p.minute||start===p.minute&&p.second===0&&now.getMilliseconds()===0);}
 function timeDistance(t:TimeRequest,start:number,duration:number):number {if(t.kind==='exact')return Math.abs(start-t.minute);return Math.max(0,t.start-start,start+duration-t.end);}
+
+type Candidate = {venue:Venue; date:string; dayIndex:number; start:number; score:number};
+
+function toSlot({venue,date,start}:Candidate,duration:number):Slot {
+  return {
+    venue_id:venue.id,venue:venue.name,venue_ar:venue.name_ar,area:venue.area,sport:venue.sport,
+    date,start_time:hhmm(start),end_time:hhmm(start+duration),capacity:venue.capacity
+  };
+}
+
 export function findSlots(request:Request,time:TimeRequest,now:Date,venues=VENUES):{match:Slot|null;alternatives:Slot[]} {
   const {sport,area,date,duration_minutes:duration,number_of_players:players}=request;
   if(!sport||!area||!date||!duration||!players)return {match:null,alternatives:[]};
-  const today=localParts(now).date;const candidates:{slot:Slot;score:number;exact:boolean;start:number}[]=[];
-  for(let i=0;i<7;i++){
-    const day=addDays(today,i);for(const v of venues){if(v.sport!==sport||v.capacity<players)continue;
-      for(const [from,to] of freeIntervals(v,day)){
-        // Include an off-grid requested start if it fits the whole interval.
-        const starts=new Set<number>();for(let m=Math.ceil(from/30)*30;m+duration<=to;m+=30)starts.add(m);
-        if(time.kind==='exact'&&day===date&&time.minute>=from&&time.minute+duration<=to)starts.add(time.minute);
-        for(const start of starts){if(!isFuture(day,start,now))continue;const a=areaDistance(area,v.area);const d=Math.abs(dayDistance(day,date));const t=timeDistance(time,start,duration);
-          candidates.push({slot:{venue_id:v.id,venue:v.name,venue_ar:v.name_ar,area:v.area,sport:v.sport,date:day,start_time:hhmm(start),end_time:hhmm(start+duration),capacity:v.capacity},score:d*1440+a*180+t,exact:d===0&&a===0&&t===0,start});}
+  const local=localParts(now);
+  const earliest=nextStart(local,now);
+  const eligible=venues.filter(venue=>venue.sport===sport&&venue.capacity>=players)
+    .map(venue=>({venue,areaPenalty:areaDistance(area,venue.area)*180}));
+  const candidates:Candidate[]=[];
+
+  for(let dayIndex=0;dayIndex<7;dayIndex++){
+    const day=addDays(local.date,dayIndex);
+    const dayPenalty=Math.abs(dayDistance(day,date))*1440;
+    const firstFutureMinute=dayIndex===0?earliest:0;
+    for(const {venue,areaPenalty} of eligible){
+      const baseScore=dayPenalty+areaPenalty;
+      for(const [opens,closes] of freeIntervals(venue,day)){
+        const from=Math.max(opens,firstFutureMinute);
+        const lastStart=closes-duration;
+        for(let start=Math.ceil(from/30)*30;start<=lastStart;start+=30){
+          candidates.push({venue,date:day,dayIndex,start,score:baseScore+timeDistance(time,start,duration)});
+        }
+        // A customer can still ask for an exact start between the suggested half-hour times.
+        if(time.kind==='exact'&&day===date&&time.minute%30!==0&&time.minute>=from&&time.minute<=lastStart){
+          candidates.push({venue,date:day,dayIndex,start:time.minute,score:baseScore});
+        }
       }
     }
   }
-  candidates.sort((a,b)=>a.score-b.score||a.slot.date.localeCompare(b.slot.date)||a.start-b.start||a.slot.venue_id.localeCompare(b.slot.venue_id));
-  const exact=candidates.find(x=>x.exact);if(exact)return {match:exact.slot,alternatives:[]};
+
+  candidates.sort((a,b)=>a.score-b.score||a.dayIndex-b.dayIndex||a.start-b.start||a.venue.id.localeCompare(b.venue.id));
+  if(candidates[0]?.score===0)return {match:toSlot(candidates[0],duration),alternatives:[]};
+
   // Avoid filling the three recommendations with nearly identical times at one venue.
-  const selected:typeof candidates=[];
-  for(const c of candidates){if(selected.length===3)break;if(!selected.some(x=>x.slot.venue_id===c.slot.venue_id&&x.slot.date===c.slot.date))selected.push(c);}
-  for(const c of candidates){if(selected.length===3)break;if(!selected.includes(c))selected.push(c);}
-  return {match:null,alternatives:selected.map(x=>x.slot)};
+  const selected:Candidate[]=[];
+  for(const candidate of candidates){
+    if(selected.length===3)break;
+    if(!selected.some(other=>other.venue.id===candidate.venue.id&&other.dayIndex===candidate.dayIndex))selected.push(candidate);
+  }
+  for(const candidate of candidates){
+    if(selected.length===3)break;
+    if(!selected.includes(candidate))selected.push(candidate);
+  }
+  return {match:null,alternatives:selected.map(candidate=>toSlot(candidate,duration))};
 }

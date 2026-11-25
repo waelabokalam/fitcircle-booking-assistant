@@ -62,3 +62,25 @@ test('Gemini does not retry authentication, quota or evidence failures',async()=
     assert.equal(attempts,1);
   }
 });
+
+test('Gemini receives a source-grounded neighborhood constraint for a Levantine request',async()=>{
+  const fixture='بدي تنس بدمر مبارح الساعة ١٠ الصبح لمدة ساعة، نحنا ٢';
+  const evidence={...emptyRaw(),sport:'تنس',area:'دمر',date:'مبارح'};
+  const extractor=geminiExtractor({apiKey:'fixture',model:'test-model',fetcher:async (_url,request)=>{
+    const schema=JSON.parse(String(request?.body)).generationConfig.responseJsonSchema;
+    assert.deepEqual(schema.properties.area.anyOf,[{type:'string',enum:['دمر']},{type:'null'}]);
+    return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(evidence)}]}}]});
+  }});
+  assert.deepEqual(await extractor(fixture),{raw:evidence,source:'gemini'});
+});
+
+test('Gemini can still quote an unrecognized neighborhood from the original message',async()=>{
+  const phrase='ساروجة';
+  const evidence={...emptyRaw(),sport:'تنس',area:phrase};
+  const extractor=geminiExtractor({apiKey:'fixture',model:'test-model',fetcher:async (_url,request)=>{
+    const schema=JSON.parse(String(request?.body)).generationConfig.responseJsonSchema;
+    assert.deepEqual(schema.properties.area.type,['string','null']);
+    return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(evidence)}]}}]});
+  }});
+  assert.deepEqual(await extractor(`بدي تنس في ${phrase}`),{raw:evidence,source:'gemini'});
+});

@@ -22,3 +22,9 @@ Verification ran 73 automated tests and the original ten-message offline benchma
 With a valid Gemini credential, Codex ran the original benchmark and browser conversation against Google. Before retries, Gemini 3.5 Flash passed 3 of 10 cases and Flash-Lite passed 8 of 10. Both browser runs produced four correct replies, with two validated Gemini responses each.
 
 Codex added bounded retries for temporary provider errors and deadlines, then verified the changes against the same cases. The retry-enabled Flash-Lite run passed 10 of 10 cases with validated Gemini responses and recovered from two upstream HTTP 503s. In the browser replay, Gemini backed all four turns and the draft retained the supplied sport and date. The 77 automated tests include fixtures for retry exhaustion, `Retry-After`, timeout recovery and validation failures. [Live verification results](RESULTS.md#live-gemini-verification)
+
+## Performance and extraction review
+
+The live diagnostic showed Gemini replacing the written neighborhood `بدمر` with `دمشق`. The original validator correctly rejected the invented quote. I used Codex to reproduce the issue, consult Google's structured output documentation and review LangExtract's approach to grounding responses in source text. The updated adapter restricts a recognized neighborhood to a literal quote or null and still validates all fields on the server. The live score describes the hybrid pipeline with Gemini enabled. [Structured output](https://ai.google.dev/gemini-api/docs/structured-output) · [LangExtract](https://github.com/google/langextract)
+
+Codex also traced redundant time-zone conversion and response formatting in the matcher. It moved those calculations out of the candidate loop and checked the old and new implementations against 2,160 inputs. [Performance results](RESULTS.md#performance-and-extraction-review)

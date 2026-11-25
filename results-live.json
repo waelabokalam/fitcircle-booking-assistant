@@ -1,9 +1,14 @@
 {
   "mode": "Provider-enabled pipeline with live Gemini",
   "model": "gemini-3.5-flash-lite",
-  "geminiResponses": 9,
+  "geminiResponses": 10,
+  "latencyMs": {
+    "median": 2984,
+    "p95": 5377
+  },
+  "providerAttempts": 10,
   "reference": "2026-11-25T12:00:00.000Z",
-  "passed": 9,
+  "passed": 10,
   "total": 10,
   "results": [
     {
@@ -47,6 +52,12 @@
             "number_of_players": "نحنا 4"
           }
         }
+      },
+      "runtime": {
+        "elapsedMs": 3274,
+        "httpStatuses": [
+          200
+        ]
       }
     },
     {
@@ -93,6 +104,12 @@
             "number_of_players": "10 people"
           }
         }
+      },
+      "runtime": {
+        "elapsedMs": 5377,
+        "httpStatuses": [
+          200
+        ]
       }
     },
     {
@@ -136,6 +153,12 @@
             "number_of_players": null
           }
         }
+      },
+      "runtime": {
+        "elapsedMs": 5108,
+        "httpStatuses": [
+          200
+        ]
       }
     },
     {
@@ -190,6 +213,12 @@
             "number_of_players": "4 players"
           }
         }
+      },
+      "runtime": {
+        "elapsedMs": 2724,
+        "httpStatuses": [
+          200
+        ]
       }
     },
     {
@@ -268,6 +297,12 @@
             "number_of_players": "10 players"
           }
         }
+      },
+      "runtime": {
+        "elapsedMs": 1424,
+        "httpStatuses": [
+          200
+        ]
       }
     },
     {
@@ -346,49 +381,61 @@
             "number_of_players": "نحنا ٤"
           }
         }
+      },
+      "runtime": {
+        "elapsedMs": 5305,
+        "httpStatuses": [
+          200
+        ]
       }
     },
     {
       "id": "07",
       "expected": "OUT_OF_RANGE",
-      "actual": "EXTRACTION_ERROR",
-      "pass": false,
+      "actual": "OUT_OF_RANGE",
+      "pass": true,
       "message": "بدي تنس بدمر مبارح الساعة ١٠ الصبح لمدة ساعة، نحنا ٢",
-      "errors": [
-        "sport: expected \"tennis\", got null",
-        "area: expected \"dummar\", got null",
-        "date: expected \"2026-11-24\", got null",
-        "start_time: expected \"10:00\", got null",
-        "duration_minutes: expected 60, got null",
-        "number_of_players: expected 2, got null",
-        "status: EXTRACTION_ERROR != OUT_OF_RANGE",
-        "clarification: null != date"
-      ],
+      "errors": [],
       "result": {
-        "status": "EXTRACTION_ERROR",
+        "status": "OUT_OF_RANGE",
         "request": {
-          "sport": null,
-          "area": null,
-          "date": null,
-          "start_time": null,
-          "duration_minutes": null,
-          "number_of_players": null,
+          "sport": "tennis",
+          "area": "dummar",
+          "date": "2026-11-24",
+          "start_time": "10:00",
+          "duration_minutes": 60,
+          "number_of_players": 2,
           "language": "ar",
           "time_window": null
         },
-        "reply": "ما قدرت افهم الطلب هلأ، فيك تعيد صياغته؟",
+        "reply": "الحجوزات التجريبية من 2026-11-25 لـ 2026-12-01. أي يوم بناسبك ضمن هالفترة؟",
         "match": null,
         "alternatives": [],
-        "clarification_field": null,
+        "clarification_field": "date",
         "trace": {
-          "source": "unavailable",
+          "source": "gemini",
           "timezone": "Asia/Damascus",
           "reference_date": "2026-11-25",
           "checks": [
-            "Extraction unavailable or invalid"
+            "Extraction evidence validated",
+            "Date, time, duration and capacity normalized in code",
+            "Date outside seven-day horizon"
           ],
-          "evidence": null
+          "evidence": {
+            "sport": "تنس",
+            "area": "دمر",
+            "date": "مبارح",
+            "start_time": "الساعة ١٠ الصبح",
+            "duration": "لمدة ساعة",
+            "number_of_players": "نحنا ٢"
+          }
         }
+      },
+      "runtime": {
+        "elapsedMs": 1521,
+        "httpStatuses": [
+          200
+        ]
       }
     },
     {
@@ -433,6 +480,12 @@
             "number_of_players": "14 players"
           }
         }
+      },
+      "runtime": {
+        "elapsedMs": 1330,
+        "httpStatuses": [
+          200
+        ]
       }
     },
     {
@@ -476,6 +529,12 @@
             "number_of_players": "نحنا ٤"
           }
         }
+      },
+      "runtime": {
+        "elapsedMs": 3244,
+        "httpStatuses": [
+          200
+        ]
       }
     },
     {
@@ -519,6 +578,12 @@
             "number_of_players": "2 players"
           }
         }
+      },
+      "runtime": {
+        "elapsedMs": 1394,
+        "httpStatuses": [
+          200
+        ]
       }
     }
   ]

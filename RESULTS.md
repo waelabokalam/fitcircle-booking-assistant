@@ -79,3 +79,18 @@ The Arabic browser replay verified that typing the first Arabic letter translate
 ### Submission fixture
 
 The original ten messages were rerun against synthetic schedules for five verified FitCircle venues. Case 06 now ranks alternatives because the fixture has no padel venue in Abu Rummaneh. The offline pipeline passed **10/10** and the suite passed **83/83**. The full live run passed **9/10**, with an extraction error on case 07 followed by a successful isolated retry. [Live results](RESULTS_LIVE.md) · [FitCircle venue directory](https://www.fitcircleapp.com/courts/padel)
+
+### Performance and extraction review
+
+| Check | Baseline at `d8505e3` | Updated |
+|---|---|---|
+| Automated tests | 83/83 | 85/85 |
+| Original offline benchmark | 10/10 | 10/10 |
+| Original live Gemini benchmark | 9/10 in a fresh baseline run | 10/10 in each of two consecutive runs |
+| Matcher median for 1,200 calls | 1,089.5 ms | 38.7 ms |
+
+The matcher benchmark cycles through an exact padel match, football alternatives and mixed-language padel alternatives. Both versions ran locally on Node.js 26.8.2 for five samples with a warm-up. The roughly 28× result measures matcher CPU time. A separate comparison checked 2,160 exact results and ranked lists across four sports, six area choices, three durations, three date offsets, five time requests and two clock instants.
+
+In case 07, Gemini sometimes returned `دمشق` for `بدمر`. The schema now accepts the actual neighborhood quote or null when the recognizer identifies a single neighborhood. The verifier still rejects unsupported quotes. The two updated live runs had 10 and 12 provider attempts, respectively. Their median end-to-end latencies were 2,984 ms and 1,382 ms, and their p95s were 5,377 ms and 9,354 ms. These are small live samples with variable upstream latency. [First live run per-case results](RESULTS_LIVE.md)
+
+Chrome replayed `i want to book tmw` → `padle` → `paddle` → `tmw`. All four turns used validated Gemini output. The court guide retained November 26 and padel, then switched to RTL when `المزة` was entered. The fifth turn also used Gemini and produced the dated Top Academy Courts link. [Court link from the replay](https://www.fitcircleapp.com/padel/top-academy-courts?date=2026-11-26)
