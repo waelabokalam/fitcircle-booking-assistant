@@ -1,9 +1,10 @@
-import type {ExtractionContext, Extractor, Field, RawIntent, Request, Result, Slot, TimeRequest} from './types.ts';
+import type {ConversationMode, ExtractionContext, Extractor, Field, RawIntent, Request, Result, Slot, TimeRequest} from './types.ts';
 import {FIELDS} from './types.ts';
 import {arabicReply, areaOf, isCorrection, languageOf, localExtractor, opensBooking, recognizeTurn, sportOf, startsNewBooking, validateEvidence} from './intent.ts';
 import {addDays, ambiguousClock, hhmm, localParts, normalizeText, resolveDate, resolveDuration, resolvePlayers, resolveTime, timePeriod, ZONE} from './time.ts';
 import {findSlots} from './availability.ts';
 import {availabilityGuidance} from './clarification.ts';
+import {guideCourts} from './court-guide.ts';
 
 const questions:Record<Field,[string,string]>={
   sport:['شو الرياضة اللي بدك تحجز إلها؟','Which sport would you like to book?'],
@@ -74,8 +75,9 @@ function modelEvidence(field:Field,value:string|null,context?:ExtractionContext)
   return value;
 }
 
-async function processTurn(message:string,extractor:Extractor,now:Date,conversational:boolean,previous?:BookingDraft) {
+async function processTurn(message:string,extractor:Extractor,now:Date,mode:ConversationMode|'single',previous?:BookingDraft) {
   if(typeof message!=='string'||!message.trim()||message.length>2000)throw new Error('Message must contain 1–2000 characters');
+  const conversational=mode!=='single';
   const today=localParts(now).date;
   const correction=isCorrection(message);
   const ended=previous?.lastStatus==='MATCH'||previous?.lastStatus==='ALTERNATIVES'||previous?.lastStatus==='NO_AVAILABILITY';
@@ -128,6 +130,13 @@ async function processTurn(message:string,extractor:Extractor,now:Date,conversat
   trace.evidence=validateEvidence(raw,message);
   const updated=FIELDS.some(field=>raw[field]!==null) || local.ambiguous.length>0;
   mergeEvidence(draft,trace.evidence,local.ambiguous,now);
+  if(mode==='directory'){
+    const guide=guideCourts(request,today,local.ambiguous,ar);
+    trace.checks.push('Prepared official FitCircle court links');
+    const turn=finish(guide.status,guide.reply,null,[],guide.field,guide.suggestions);
+    turn.result.court_links=guide.links;
+    return turn;
+  }
   trace.checks.push('Date, time, duration and capacity normalized in code');
 
   const lastDay=addDays(today,6);
@@ -183,9 +192,9 @@ async function processTurn(message:string,extractor:Extractor,now:Date,conversat
 }
 
 export async function book(message:string,extractor:Extractor,clock:()=>Date=()=>new Date()):Promise<Result> {
-  return (await processTurn(message,extractor,clock(),false)).result;
+  return (await processTurn(message,extractor,clock(),'single')).result;
 }
 
-export function bookingTurn(message:string,extractor:Extractor,now:Date,previous?:BookingDraft) {
-  return processTurn(message,extractor,now,true,previous);
+export function bookingTurn(message:string,extractor:Extractor,now:Date,previous?:BookingDraft,mode:ConversationMode='directory') {
+  return processTurn(message,extractor,now,mode,previous);
 }

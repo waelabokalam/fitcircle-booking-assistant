@@ -1,6 +1,6 @@
 # FitCircle Booking Assistant
 
-A small bilingual service for interpreting sports-booking messages in Damascus and checking synthetic availability. Built for the Levare Lab internship exercise. **No real reservations are created.**
+A bilingual chat guide for finding real FitCircle courts in Damascus. The chat opens FitCircle's official pages for live times and booking. The original stateless exercise API uses a synthetic schedule.
 
 ## Quick start
 
@@ -11,7 +11,7 @@ npm start
 # Open http://localhost:3000
 ```
 
-The default `local` mode uses rule-based extraction and runs offline. To try the chat, send `i want to play tmw`, then tap **Padel**, **Mezzeh**, and an open start time such as **18:00**. You can also type your reply. Use **New booking** or type `start over` to clear the draft. The server binds to loopback for local evaluation.
+The default `local` mode uses rule-based extraction. To try the court guide, send `i want to play tmw`, tap **Padel**, choose **Mezzeh**, then open **Top Academy Courts**. The court page opens on the selected date. You can also type your reply. Use **New booking** or type `start over` to clear the draft. The server binds to loopback for local evaluation.
 
 ### Enable actual LLM extraction
 
@@ -38,7 +38,7 @@ curl -s http://localhost:3000/api/booking \
   -d '{"message":"Book padel tomorrow at 7 pm in Mezzeh for 90 minutes, 4 players."}'
 ```
 
-The assignment's `POST /api/booking` treats each message independently. Its result includes a normalized `request`, `status`, localized `reply`, `match`, `alternatives`, `clarification_field`, and a `trace` with current-turn evidence, extraction source, reference date and checks. Business statuses are `MATCH`, `ALTERNATIVES`, `NEEDS_INFO`, `NO_AVAILABILITY` and `OUT_OF_RANGE`. Provider errors return `EXTRACTION_ERROR` with HTTP 503.
+The assignment's `POST /api/booking` checks synthetic availability and treats each message independently. Its result includes a normalized `request`, `status`, localized `reply`, `match`, `alternatives`, `clarification_field`, and a `trace` with current-turn evidence, extraction source, reference date and checks. Business statuses are `MATCH`, `ALTERNATIVES`, `NEEDS_INFO`, `NO_AVAILABILITY` and `OUT_OF_RANGE`. Provider errors return `EXTRACTION_ERROR` with HTTP 503.
 
 ### Multi-turn chat
 
@@ -48,9 +48,9 @@ The assignment's `POST /api/booking` treats each message independently. Its resu
 | Continue | `{"session_id":"<returned UUID>","message":"padle"}` |
 | Start a new draft | `{"session_id":"<returned UUID>","reset":true}` |
 
-Message turns return the booking result plus a `session_id`. Always use the ID from the latest response. Reset rotates the ID and clears its draft. A reset request may also contain the first `message` of the new booking. Unknown or expired UUIDs start an empty session with a new ID. Concurrent actions on one in-flight session return HTTP 409. Input errors return 400, 413 or 415. `GET /api/availability` exposes synthetic inventory and `GET /api/health` reports liveness.
+Message turns return the court guide result plus a `session_id`. Always use the ID from the latest response. Reset rotates the ID and clears its draft. A reset request may also contain the first `message` of the new search. Unknown or expired UUIDs start an empty session with a new ID. Concurrent actions on one in-flight session return HTTP 409. Input errors return 400, 413 or 415. `GET /api/availability` exposes the synthetic exercise inventory and `GET /api/health` reports liveness.
 
-When the mock schedule has eligible options for the next question, chat includes a `suggestions` array. Each string can be sent as the next `message` with the same session ID.
+Chat returns `court_links` with names, locations where known, and official URLs. A `COURTS` result shows places to check on FitCircle. When present, each string in `suggestions` can be sent as the next `message` with the same session ID.
 
 ## Design decisions
 
@@ -59,15 +59,15 @@ Current message + optional pending question
    → Gemini and bounded local recognition, or offline local recognition
    → Validated verbatim evidence
    → Deterministic normalization and optional draft merge
-   → One clarification or deterministic availability decision
+   → Court guide links or a deterministic exercise result
    → Localized reply and decision trace
 ```
 
-- **Trust boundary.** Gemini receives the current message and, in chat, the pending field and a flag for whether that field needs AM/PM. The response must contain six nullable verbatim phrases. Validation rejects missing or extra keys and invented evidence. Recognized local phrases and conflicts take precedence, and Gemini can supply evidence where local recognition finds none. Only the booking engine can return a venue or slot.
+- **Trust boundary.** Gemini receives the current message and, in chat, the pending field and a flag for whether that field needs AM/PM. The response must contain six nullable verbatim phrases. Validation rejects missing or extra keys and invented evidence. Recognized local phrases and conflicts take precedence, and Gemini can supply evidence where local recognition finds none. The court guide supplies reviewed links, and the exercise engine supplies synthetic slots.
 - **Draft lifecycle.** The server stores the normalized request, the pending field, any unresolved clock reading, and the previous outcome in memory. New values replace only the affected fields. A matched draft supports explicit revisions such as “actually make it Friday.” A regular request after a match starts fresh. While a draft is active, **New booking** and phrases such as “start over” explicitly clear it. The store holds up to 1,000 sessions and expires idle drafts after 30 minutes. Each browser page has a separate session.
-- **Time.** `Intl.DateTimeFormat` resolves dates in `Asia/Damascus`. Relative dates are resolved on the turn where they are supplied. The inventory covers today plus six days and excludes past starts. Weekday names use the next occurrence including today, with an explicit “next” on the same weekday advancing seven days. Evening covers 17:00–23:00, morning 08:00–12:00 and afternoon 12:00–17:00. A session must fit inside the whole requested window. A bare 1–12 hour requires AM or PM. Canonical two-digit `HH:mm` is accepted as 24-hour time. Durations must be integers from 15 through 240 minutes.
-- **Clarification.** The assistant asks for one field at a time and prioritizes known conflicts or a date outside the horizon. Otherwise it asks for sport, date, area, time, duration, then player count. The pending question gives meaning to short replies such as `٤`, `any` and `المسا`. The chat duration question specifies minutes so `60` has a defined unit.
-- **Availability suggestions.** When the date is known, chat can show example start times by sport, eligible neighborhoods, or open windows while asking the next question. These previews come from mock inventory and respect the sport, area, time, duration and group size already supplied. The booking engine checks the full draft before confirming mock availability.
+- **Time.** `Intl.DateTimeFormat` resolves dates in `Asia/Damascus`. Relative dates are resolved on the turn where they are supplied. Weekday names use the next occurrence including today, with an explicit “next” on the same weekday advancing seven days. The exercise inventory covers today plus six days and excludes past starts. In that matcher, evening covers 17:00–23:00, morning 08:00–12:00 and afternoon 12:00–17:00. A session must fit inside the whole requested window. A bare 1–12 hour requires AM or PM. Canonical two-digit `HH:mm` is accepted as 24-hour time. Durations must be integers from 15 through 240 minutes.
+- **Clarification.** The court guide asks for one detail at a time to select useful links. The exercise matcher prioritizes known conflicts and out-of-range dates, then asks for sport, date, area, time, duration and player count. The pending question gives meaning to short replies.
+- **Court guide.** Chat can ask for a sport or date, offer neighborhoods from its reviewed venue links, and open official venue pages with a selected date. Sport-specific links for Top Academy Courts preserve football or basketball when requested. FitCircle handles current times and any booking on its own pages.
 - **Matching.** All candidates must fit one free interval completely, match the sport and meet player capacity. Exact requested date and area (or `any`) and exact start or flexible window produce a match. Synthetic inventory includes six invented venues across Mezzeh, Malki, Abu Rummaneh, Kafr Souseh, Dummar, Baramkeh, with a fixed weekday maintenance/gap pattern. Alternate starts use a 30-minute grid; requested off-grid starts are checked directly. Ranking score = `1440 × absolute date difference in days + 180 × neighborhood distance + time deviation in minutes`. Distances 0/1/2 represent same/adjacent/other mock area; these are illustrative, not measured travel times. Ties resolve by date, time, venue ID. Top alternatives prefer distinct venue/date pairs before filling remaining slots. Hard constraints are never relaxed; if no valid alternatives exist, ask whether the customer can change duration or group size.
 - **Language.** Reply templates use Levantine Arabic or English. Mixed messages use the dominant script, with Arabic on ties. Bare numbers and neutral shorthands inherit the prior language. The slot details in the reply come from the deterministic decision.
 
@@ -87,7 +87,7 @@ Phase 1 live verification is **PASS** for the rerun. Gemini 3.5 Flash-Lite retur
 
 ## Known limits and next steps
 
-- All chat slots use a fictional inventory. Once a date is known, the chat also links to FitCircle's court directory or a relevant sport listing. Padel in Mezzeh links to Top Academy Courts with the selected date. Live slots are shown on FitCircle itself. [FitCircle court directory](https://www.fitcircleapp.com/courts) · [Top Academy Courts](https://www.fitcircleapp.com/padel/top-academy-courts)
+- The chat uses a reviewed set of public venue links and links to the full FitCircle sport directory. FitCircle shows live slots on those pages. [FitCircle court directory](https://www.fitcircleapp.com/courts) · [Top Academy Courts](https://www.fitcircleapp.com/padel/top-academy-courts)
 - The grammar and normalizers cover a bounded set of expressions, sports and areas. Complex negation, unusual date and time expressions, and unsupported terminology may require rephrasing. Multiple independent bookings need separate drafts.
 - The session ID acts as a bearer token on the local demo. State lives in a single process and disappears on restart. A browser reload starts a new chat. The mock neighborhood distances are fixed.
 - A sustained provider disruption can delay a reply for up to 40 seconds before local fallback in chat or HTTP 503 from the stateless endpoint.
@@ -100,6 +100,7 @@ src/intent.ts         Local extraction / evidence validation / language
 src/provider.ts       Structured Gemini extraction adapter
 src/time.ts           Damascus calendar and time normalization
 src/availability.ts   Mock inventory and deterministic ranking
+src/court-guide.ts    Reviewed FitCircle court links and date handoff
 src/service.ts        Orchestration and localized replies
 src/conversations.ts  In-memory session lifecycle
 src/server.ts         HTTP transport and static demo

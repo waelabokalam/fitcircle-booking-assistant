@@ -9,7 +9,7 @@ export const VENUES:Venue[]=[
   {id:'bk-basketball',name:'Baramkeh Basketball Court',name_ar:'ملعب البرامكة لكرة السلة',area:'baramkeh',sport:'basketball',capacity:10,intervals:[[600,780],[1020,1260]]}
 ];
 // Synthetic neighborhood adjacency, not measured road distance.
-const neighbors:Record<Exclude<Area,'any'>,Exclude<Area,'any'>[]>={mezzeh:['kafr_souseh','dummar','malki'],malki:['abu_rummaneh','mezzeh','baramkeh'],abu_rummaneh:['malki','baramkeh','mezzeh'],kafr_souseh:['mezzeh','baramkeh'],dummar:['mezzeh'],baramkeh:['abu_rummaneh','malki','kafr_souseh']};
+const neighbors:Record<Exclude<Area,'any'>,Exclude<Area,'any'>[]>={mezzeh:['kafr_souseh','dummar','malki'],malki:['abu_rummaneh','mezzeh','baramkeh'],abu_rummaneh:['malki','baramkeh','mezzeh'],kafr_souseh:['mezzeh','baramkeh'],dummar:['mezzeh'],baramkeh:['abu_rummaneh','malki','kafr_souseh'],adawi:[]};
 export function areaDistance(a:Area,b:Exclude<Area,'any'>):number{return a==='any'||a===b?0:neighbors[a].includes(b)?1:2;}
 export function freeIntervals(venue:Venue,date:string):[number,number][] {
   // A fixed weekly pattern ensures reproducibility without an external DB.

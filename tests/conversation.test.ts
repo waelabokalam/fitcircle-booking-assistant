@@ -7,7 +7,7 @@ import {emptyRaw, localExtractor} from '../src/intent.ts';
 import {geminiExtractor} from '../src/provider.ts';
 import {addDays, localParts} from '../src/time.ts';
 import {REFERENCE} from '../scripts/cases.ts';
-import type {ExtractionContext, Extractor, Result} from '../src/types.ts';
+import type {ConversationMode, ExtractionContext, Extractor, Result} from '../src/types.ts';
 
 const clock=()=>new Date(REFERENCE);
 type ChatResult=Result & {session_id:string};
@@ -15,9 +15,10 @@ type ChatResult=Result & {session_id:string};
 async function withServer(
   run:(url:string)=>Promise<void>,
   extractor:Extractor=localExtractor,
-  now:()=>Date=clock
+  now:()=>Date=clock,
+  mode:ConversationMode='mock'
 ){
-  const server=createApp(extractor,now);
+  const server=createApp(extractor,now,mode);
   server.listen(0,'127.0.0.1');
   await once(server,'listening');
   try{
@@ -50,6 +51,58 @@ function chat(url:string){
 }
 
 const fullPadel='Book padel tomorrow at 7 pm in Mezzeh for 60 minutes, 4 players.';
+const courtOrigin='https://www.fitcircleapp.com';
+
+test('court guide offers real sports and dated court links without mock slots',()=>withServer(async url=>{
+  const first=await send(url,'i want to play tmw');
+  assert.deepEqual(first.suggestions,['Padel','Football','Basketball']);
+  assert.equal(first.request.date,'2026-11-26');
+  assert.doesNotMatch(first.reply,/mock|09:00|18:00/i);
+
+  const padel=await send(url,'Padel',first.session_id);
+  assert.equal(padel.status,'COURTS');
+  assert.deepEqual(padel.suggestions,['Mezzeh','Dummar','Adawi']);
+  assert.ok(padel.court_links?.some(link=>link.name==='Trio Padel Arena'&&link.url.includes('date=2026-11-26')));
+  const mezzeh=await send(url,'Mezzeh',first.session_id);
+  assert.equal(mezzeh.request.sport,'padel');
+  assert.equal(mezzeh.match,null);
+  assert.deepEqual(mezzeh.alternatives,[]);
+  assert.deepEqual(mezzeh.court_links?.map(link=>link.url),[
+    `${courtOrigin}/padel/top-academy-courts?date=2026-11-26`,
+    `${courtOrigin}/courts/padel`
+  ]);
+  const dateChange=await send(url,'actually make it Friday',first.session_id);
+  assert.equal(dateChange.court_links?.[0].url,`${courtOrigin}/padel/top-academy-courts?date=2026-11-27`);
+},localExtractor,clock,'directory'));
+
+test('court guide uses verified sport and neighborhood links in English and Arabic',()=>withServer(async url=>{
+  const football=await send(url,'football in Mezzeh tomorrow');
+  assert.equal(football.court_links?.[0].url,`${courtOrigin}/padel/top-academy-courts?date=2026-11-26&sport=football`);
+  const basketball=await send(url,'بدي ألعب باسكت بكرا بالمزة');
+  assert.match(basketball.reply,/مواعيد/);
+  assert.equal(basketball.court_links?.[0].location,'مدينة الشباب، المزة');
+  assert.equal(basketball.court_links?.[0].url,`${courtOrigin}/padel/top-academy-courts?date=2026-11-26&sport=basketball`);
+  const adawi=await send(url,'padel in Adawi tomorrow');
+  assert.deepEqual(adawi.court_links?.map(link=>link.name),['G.M Padel',"Let's Padel",'All FitCircle padel courts']);
+  const complete=await send(url,fullPadel);
+  assert.equal(complete.status,'COURTS');
+  assert.equal(complete.match,null);
+  assert.doesNotMatch(complete.reply,/mock|19:00|20:00/i);
+},localExtractor,clock,'directory'));
+
+test('court guide points to official directories for unsupported sports and unverified areas',()=>withServer(async url=>{
+  const tennis=await send(url,'tennis tomorrow');
+  assert.equal(tennis.clarification_field,'sport');
+  assert.deepEqual(tennis.court_links?.map(link=>link.url),[`${courtOrigin}/courts`]);
+  const area=await send(url,'padel in Malki tomorrow');
+  assert.deepEqual(area.court_links?.map(link=>link.url),[`${courtOrigin}/courts/padel`]);
+  const undated=await send(url,'padel');
+  assert.equal(undated.clarification_field,'date');
+  assert.ok(undated.court_links?.every(link=>!link.url.includes('?date=')));
+  const past=await send(url,'padel yesterday',undated.session_id);
+  assert.equal(past.status,'OUT_OF_RANGE');
+  assert.ok(past.court_links?.every(link=>!link.url.includes('?date=')));
+},localExtractor,clock,'directory'));
 
 test('reported four-turn exchange retains tomorrow and accepts both padel spellings',()=>withServer(async url=>{
   const turn=chat(url);

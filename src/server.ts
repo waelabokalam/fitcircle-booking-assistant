@@ -6,11 +6,11 @@ import {configuredExtractor} from './provider.ts';
 import {book} from './service.ts';
 import {createConversations} from './conversations.ts';
 import {availabilitySnapshot} from './availability.ts';
-import type {Extractor} from './types.ts';
+import type {ConversationMode,Extractor} from './types.ts';
 const PUBLIC=new URL('../public/',import.meta.url);
 const SESSION_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-export function createApp(extractor:Extractor,clock:()=>Date=()=>new Date()){
-  const conversation=createConversations(extractor,clock);
+export function createApp(extractor:Extractor,clock:()=>Date=()=>new Date(),mode:ConversationMode='directory'){
+  const conversation=createConversations(extractor,clock,mode);
   return createServer(async(req,res)=>{
     const json=(status:number,data:unknown)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(data));};
     const path=(req.url??'').split('?')[0];
@@ -33,7 +33,7 @@ export function createApp(extractor:Extractor,clock:()=>Date=()=>new Date()){
         const result=await book(body.message,extractor,clock);return json(result.status==='EXTRACTION_ERROR'?503:200,result);
       }
       if(req.method==='GET'&&path==='/api/availability')return json(200,{mock:true,timezone:'Asia/Damascus',days:availabilitySnapshot(clock())});
-      if(req.method==='GET'&&path==='/api/health')return json(200,{status:'ok',mock:true});
+      if(req.method==='GET'&&path==='/api/health')return json(200,{status:'ok',availability:mode==='directory'?'fitcircle-links':'mock'});
       const assets:Record<string,[string,string]>={'/':['index.html','text/html; charset=utf-8'],'/app.js':['app.js','text/javascript; charset=utf-8'],'/style.css':['style.css','text/css; charset=utf-8']};
       if(req.method==='GET'&&Object.hasOwn(assets,path)){const [file,type]=assets[path];res.writeHead(200,{'Content-Type':type,'X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'"});return res.end(await readFile(new URL(file,PUBLIC)));}
       return json(404,{error:'Not found'});
@@ -43,5 +43,5 @@ export function createApp(extractor:Extractor,clock:()=>Date=()=>new Date()){
 if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]){
   if(existsSync('.env'))process.loadEnvFile('.env');
   const extractor=configuredExtractor();const port=Number(process.env.PORT??3000);
-  createApp(extractor).listen(port,'127.0.0.1',()=>console.log(`FitCircle mock demo: http://localhost:${port} (${process.env.EXTRACTION_MODE??'local'} extraction)`));
+  createApp(extractor).listen(port,'127.0.0.1',()=>console.log(`FitCircle court guide: http://localhost:${port} (${process.env.EXTRACTION_MODE??'local'} extraction)`));
 }

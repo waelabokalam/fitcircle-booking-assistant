@@ -1,13 +1,13 @@
 import {randomUUID} from 'node:crypto';
 import {bookingTurn} from './service.ts';
 import type {BookingDraft} from './service.ts';
-import type {Extractor} from './types.ts';
+import type {ConversationMode,Extractor} from './types.ts';
 
 const IDLE_MS=30*60*1000;
 const MAX_SESSIONS=1000;
 type Session={draft?:BookingDraft; touchedAt:number; busy:boolean};
 
-export function createConversations(extractor:Extractor,clock:()=>Date) {
+export function createConversations(extractor:Extractor,clock:()=>Date,mode:ConversationMode) {
   const sessions=new Map<string,Session>();
 
   return async (id:string|undefined,message:string|undefined,reset:boolean)=>{
@@ -32,7 +32,7 @@ export function createConversations(extractor:Extractor,clock:()=>Date) {
     if(message===undefined)return {code:200,body:{session_id:id}};
     session.busy=true;
     try{
-      const {result,draft}=await bookingTurn(message,extractor,now,session.draft);
+      const {result,draft}=await bookingTurn(message,extractor,now,session.draft,mode);
       session.draft=draft;
       session.touchedAt=clock().getTime();
       return {code:200,body:{...result,session_id:id}};
