@@ -26,7 +26,7 @@ Every expected extraction field is asserted, in addition to decision status and 
 | `npm test` on Node.js 26.8.2 with loopback access | 57/57 passed | 73/73 passed, including 16 new HTTP regressions |
 | Original `npm run eval` with the fixed Damascus clock | 10/10 passed | 10/10 passed |
 | In-app browser automation against the local server | All four reported replies reproduced | Retained padel and tomorrow through all four turns |
-| `npm run eval:live` | — | Blocked before the first provider request because `GEMINI_API_KEY` was absent |
+| `npm run eval:live` | — | 3/10 with Gemini 3.5 Flash and 8/10 with Gemini 3.5 Flash-Lite |
 
 The final suite and offline benchmark also passed on Node.js 23.5.0.
 
@@ -41,4 +41,24 @@ The final suite and offline benchmark also passed on Node.js 23.5.0.
 
 The updated browser inspector showed `sport: padel` and `date: 2026-11-26` at the end of this exchange. The automated browser session continued with `المزة`, `8`, `pm`, `60` and `٤`. It asked whether 8 meant morning or evening, then showed Mezzeh Padel Club at 20:00–21:00 with a mock-availability message in Arabic. “Actually make it Friday” moved the date to November 27. “لا خلينا الساعة ٧” asked for AM/PM before “المسا” changed the slot to 19:00–20:00. A second tab had an empty draft, and **New booking** cleared the original transcript and fields.
 
-The automated Gemini tests use HTTP fixtures. They verify pending-field context, evidence validation, rejection of conflicting or invented evidence, and fallback behavior. Live language accuracy and live provider availability remain unmeasured.
+The automated Gemini tests use HTTP fixtures. They verify pending-field context, evidence validation, rejection of conflicting or invented evidence, and fallback behavior.
+
+### Live Gemini verification
+
+**Verdict — PARTIAL.** Both models received the original ten synthetic messages through the live stateless evaluator. The cases, Damascus reference clock and 12-second provider deadline were used for both runs. The score measures the full provider-enabled pipeline, including bounded local recognition and deterministic checks.
+
+| Model | Benchmark | Cases returning `EXTRACTION_ERROR` | Browser replies | Browser turns with accepted Gemini output |
+| --- | --- | --- | --- | --- |
+| `gemini-3.5-flash` | 3/10 | 01, 03, 05, 06, 07, 08, 10 | 4/4 | 2/4 |
+| `gemini-3.5-flash-lite` | 8/10 | 04, 07 | 4/4 | 2/4 |
+
+Three diagnostic replays of failed Flash inputs hit the 12-second client deadline. The two Flash-Lite probes used to select the second model returned valid responses within that deadline. In separate Flash-Lite diagnostics after the benchmark, case 04 and the browser's final `tmw` both returned valid responses. Google returned HTTP 503 for case 07. The scored runs are recorded above. The complete Flash-Lite benchmark is in [RESULTS_LIVE.md](RESULTS_LIVE.md) and [results-live.json](results-live.json).
+
+| Customer | Browser reply on both runs | Flash source | Flash-Lite source |
+| --- | --- | --- | --- |
+| `i want to book tmw` | Which sport would you like to book? | `gemini` | `gemini` |
+| `padle` | Which area would you prefer? | `local-fallback` | `gemini` |
+| `paddle` | Which area would you prefer? | `gemini` | `local-fallback` |
+| `tmw` | Which area would you prefer? | `local-fallback` | `local-fallback` |
+
+Both Gemini-enabled browser sessions retained November 26 from the first turn and padel from the second turn. Each finished by asking for the area. Provider reliability remains the gap in live verification.

@@ -21,7 +21,7 @@ The default `local` mode uses rule-based extraction and runs offline. To try the
 ```dotenv
 EXTRACTION_MODE=gemini
 GEMINI_API_KEY=your_key_here
-GEMINI_MODEL=gemini-3.5-flash
+GEMINI_MODEL=gemini-3.5-flash-lite
 ```
 
 3. Run `npm start`. The decision inspector reports `gemini` after validating a provider response. The adapter calls Google's API with a structured output schema. Keep the API key in the server environment and use synthetic messages for this exercise. [generateContent REST API](https://ai.google.dev/api/generate-content) · [Structured outputs](https://ai.google.dev/gemini-api/docs/structured-output)
@@ -78,12 +78,14 @@ The original ten-message benchmark uses a fixed reference instant (`2026-11-25T1
 
 The HTTP regressions cover the reported exchange, Arabic and mixed-language conversations, corrections, reset, isolation, expiry, ambiguity, provider failures and booking constraints. Provider fixtures simulate HTTP responses. The live benchmark requires a Gemini key and network access and measures the provider-enabled pipeline.
 
+Phase 1 live verification is **PARTIAL**. Gemini 3.5 Flash-Lite passed 8 of 10 original cases. All four browser replies were correct, with two accepted Gemini responses and two local fallbacks. Gemini 3.5 Flash passed 3 of 10 cases in the initial run. [Verification details](RESULTS.md#live-gemini-verification) · [Live case results](RESULTS_LIVE.md)
+
 ## Known limits and next steps
 
 - All slots use a fictional inventory. A match only confirms mock availability.
 - The grammar and normalizers cover a bounded set of expressions, sports and areas. Complex negation, unusual date and time expressions, and unsupported terminology may require rephrasing. Multiple independent bookings need separate drafts.
 - The session ID acts as a bearer token on the local demo. State lives in a single process and disappears on restart. A browser reload starts a new chat. The mock neighborhood distances are fixed.
-- The live benchmark stopped before contacting Gemini because `GEMINI_API_KEY` was absent. Provider behavior has automated fixture coverage.
+- Provider calls have a 12-second deadline. Live delays can trigger local fallback in chat and HTTP 503 on the stateless endpoint.
 
 ## Repository map
 

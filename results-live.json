@@ -1,0 +1,489 @@
+{
+  "mode": "Provider-enabled pipeline with live Gemini",
+  "reference": "2026-11-25T12:00:00.000Z",
+  "passed": 8,
+  "total": 10,
+  "results": [
+    {
+      "id": "01",
+      "expected": "NEEDS_INFO",
+      "actual": "NEEDS_INFO",
+      "pass": true,
+      "message": "بدي احجز ملعب بادل بكرا الساعة 7 المسا بالمزة، نحنا 4",
+      "errors": [],
+      "result": {
+        "status": "NEEDS_INFO",
+        "request": {
+          "sport": "padel",
+          "area": "mezzeh",
+          "date": "2026-11-26",
+          "start_time": "19:00",
+          "duration_minutes": null,
+          "number_of_players": 4,
+          "language": "ar",
+          "time_window": null
+        },
+        "reply": "قديش بدك مدة الحجز؟",
+        "match": null,
+        "alternatives": [],
+        "clarification_field": "duration",
+        "trace": {
+          "source": "gemini",
+          "timezone": "Asia/Damascus",
+          "reference_date": "2026-11-25",
+          "checks": [
+            "Extraction evidence validated",
+            "Date, time, duration and capacity normalized in code",
+            "Clarification needed: duration"
+          ],
+          "evidence": {
+            "sport": "بادل",
+            "area": "بالمزة",
+            "date": "بكرا",
+            "start_time": "الساعة 7 المسا",
+            "duration": null,
+            "number_of_players": "نحنا 4"
+          }
+        }
+      }
+    },
+    {
+      "id": "02",
+      "expected": "NEEDS_INFO",
+      "actual": "NEEDS_INFO",
+      "pass": true,
+      "message": "Any football pitch free Friday evening near Malki for 10 people?",
+      "errors": [],
+      "result": {
+        "status": "NEEDS_INFO",
+        "request": {
+          "sport": "football",
+          "area": "malki",
+          "date": "2026-11-27",
+          "start_time": null,
+          "duration_minutes": null,
+          "number_of_players": 10,
+          "language": "en",
+          "time_window": {
+            "start": "17:00",
+            "end": "23:00"
+          }
+        },
+        "reply": "How long would you like to book for?",
+        "match": null,
+        "alternatives": [],
+        "clarification_field": "duration",
+        "trace": {
+          "source": "gemini",
+          "timezone": "Asia/Damascus",
+          "reference_date": "2026-11-25",
+          "checks": [
+            "Extraction evidence validated",
+            "Date, time, duration and capacity normalized in code",
+            "Clarification needed: duration"
+          ],
+          "evidence": {
+            "sport": "football",
+            "area": "Malki",
+            "date": "Friday",
+            "start_time": "evening",
+            "duration": null,
+            "number_of_players": "10 people"
+          }
+        }
+      }
+    },
+    {
+      "id": "03",
+      "expected": "NEEDS_INFO",
+      "actual": "NEEDS_INFO",
+      "pass": true,
+      "message": "في شي ملعب فاضي اليوم؟",
+      "errors": [],
+      "result": {
+        "status": "NEEDS_INFO",
+        "request": {
+          "sport": null,
+          "area": null,
+          "date": "2026-11-25",
+          "start_time": null,
+          "duration_minutes": null,
+          "number_of_players": null,
+          "language": "ar",
+          "time_window": null
+        },
+        "reply": "شو الرياضة اللي بدك تحجز إلها؟",
+        "match": null,
+        "alternatives": [],
+        "clarification_field": "sport",
+        "trace": {
+          "source": "gemini",
+          "timezone": "Asia/Damascus",
+          "reference_date": "2026-11-25",
+          "checks": [
+            "Extraction evidence validated",
+            "Date, time, duration and capacity normalized in code",
+            "Clarification needed: sport"
+          ],
+          "evidence": {
+            "sport": null,
+            "area": null,
+            "date": "اليوم",
+            "start_time": null,
+            "duration": null,
+            "number_of_players": null
+          }
+        }
+      }
+    },
+    {
+      "id": "04",
+      "expected": "MATCH",
+      "actual": "EXTRACTION_ERROR",
+      "pass": false,
+      "message": "Book padel tomorrow at 7 pm in Mezzeh for 90 minutes, 4 players.",
+      "errors": [
+        "sport: expected \"padel\", got null",
+        "area: expected \"mezzeh\", got null",
+        "date: expected \"2026-11-26\", got null",
+        "start_time: expected \"19:00\", got null",
+        "duration_minutes: expected 90, got null",
+        "number_of_players: expected 4, got null",
+        "status: EXTRACTION_ERROR != MATCH",
+        "Wrong venue",
+        "Wrong start"
+      ],
+      "result": {
+        "status": "EXTRACTION_ERROR",
+        "request": {
+          "sport": null,
+          "area": null,
+          "date": null,
+          "start_time": null,
+          "duration_minutes": null,
+          "number_of_players": null,
+          "language": "en",
+          "time_window": null
+        },
+        "reply": "I couldn’t read that request right now. Could you rephrase it?",
+        "match": null,
+        "alternatives": [],
+        "clarification_field": null,
+        "trace": {
+          "source": "unavailable",
+          "timezone": "Asia/Damascus",
+          "reference_date": "2026-11-25",
+          "checks": [
+            "Extraction unavailable or invalid"
+          ],
+          "evidence": null
+        }
+      }
+    },
+    {
+      "id": "05",
+      "expected": "ALTERNATIVES",
+      "actual": "ALTERNATIVES",
+      "pass": true,
+      "message": "Football in Malki tomorrow at 7 pm for 60 minutes, 10 players.",
+      "errors": [],
+      "result": {
+        "status": "ALTERNATIVES",
+        "request": {
+          "sport": "football",
+          "area": "malki",
+          "date": "2026-11-26",
+          "start_time": "19:00",
+          "duration_minutes": 60,
+          "number_of_players": 10,
+          "language": "en",
+          "time_window": null
+        },
+        "reply": "No exact match, but these are the closest available options: Malki Football Arena — 2026-11-26, 20:00–21:00; Kafr Souseh Sports Field — 2026-11-26, 19:00–20:00; Malki Football Arena — 2026-11-25, 19:00–20:00. Which works for you?",
+        "match": null,
+        "alternatives": [
+          {
+            "venue_id": "mk-football",
+            "venue": "Malki Football Arena",
+            "venue_ar": "ملعب المالكي لكرة القدم",
+            "area": "malki",
+            "sport": "football",
+            "date": "2026-11-26",
+            "start_time": "20:00",
+            "end_time": "21:00",
+            "capacity": 12
+          },
+          {
+            "venue_id": "ks-football",
+            "venue": "Kafr Souseh Sports Field",
+            "venue_ar": "ملعب كفرسوسة الرياضي",
+            "area": "kafr_souseh",
+            "sport": "football",
+            "date": "2026-11-26",
+            "start_time": "19:00",
+            "end_time": "20:00",
+            "capacity": 16
+          },
+          {
+            "venue_id": "mk-football",
+            "venue": "Malki Football Arena",
+            "venue_ar": "ملعب المالكي لكرة القدم",
+            "area": "malki",
+            "sport": "football",
+            "date": "2026-11-25",
+            "start_time": "19:00",
+            "end_time": "20:00",
+            "capacity": 12
+          }
+        ],
+        "clarification_field": null,
+        "trace": {
+          "source": "gemini",
+          "timezone": "Asia/Damascus",
+          "reference_date": "2026-11-25",
+          "checks": [
+            "Extraction evidence validated",
+            "Date, time, duration and capacity normalized in code",
+            "Sport, capacity, full interval, horizon and past times checked",
+            "Alternatives ranked and diversified"
+          ],
+          "evidence": {
+            "sport": "Football",
+            "area": "Malki",
+            "date": "tomorrow",
+            "start_time": "at 7 pm",
+            "duration": "60 minutes",
+            "number_of_players": "10 players"
+          }
+        }
+      }
+    },
+    {
+      "id": "06",
+      "expected": "MATCH",
+      "actual": "MATCH",
+      "pass": true,
+      "message": "بدي padel بأبو رمانة بعد بكرا الساعة ٦ المسا لمدة ساعة، نحنا ٤",
+      "errors": [],
+      "result": {
+        "status": "MATCH",
+        "request": {
+          "sport": "padel",
+          "area": "abu_rummaneh",
+          "date": "2026-11-27",
+          "start_time": "18:00",
+          "duration_minutes": 60,
+          "number_of_players": 4,
+          "language": "mixed",
+          "time_window": null
+        },
+        "reply": "تمام! متوفر بادل أبو رمانة — 2026-11-27, 18:00–19:00 لـ 4 لاعبين. هاد تأكيد توفر تجريبي، مو حجز فعلي.",
+        "match": {
+          "venue_id": "ar-padel",
+          "venue": "Abu Rummaneh Padel",
+          "venue_ar": "بادل أبو رمانة",
+          "area": "abu_rummaneh",
+          "sport": "padel",
+          "date": "2026-11-27",
+          "start_time": "18:00",
+          "end_time": "19:00",
+          "capacity": 4
+        },
+        "alternatives": [],
+        "clarification_field": null,
+        "trace": {
+          "source": "gemini",
+          "timezone": "Asia/Damascus",
+          "reference_date": "2026-11-25",
+          "checks": [
+            "Extraction evidence validated",
+            "Date, time, duration and capacity normalized in code",
+            "Sport, capacity, full interval, horizon and past times checked",
+            "Exact area/date/time constraint satisfied"
+          ],
+          "evidence": {
+            "sport": "padel",
+            "area": "أبو رمانة",
+            "date": "بعد بكرا",
+            "start_time": "الساعة ٦ المسا",
+            "duration": "لمدة ساعة",
+            "number_of_players": "نحنا ٤"
+          }
+        }
+      }
+    },
+    {
+      "id": "07",
+      "expected": "OUT_OF_RANGE",
+      "actual": "EXTRACTION_ERROR",
+      "pass": false,
+      "message": "بدي تنس بدمر مبارح الساعة ١٠ الصبح لمدة ساعة، نحنا ٢",
+      "errors": [
+        "sport: expected \"tennis\", got null",
+        "area: expected \"dummar\", got null",
+        "date: expected \"2026-11-24\", got null",
+        "start_time: expected \"10:00\", got null",
+        "duration_minutes: expected 60, got null",
+        "number_of_players: expected 2, got null",
+        "status: EXTRACTION_ERROR != OUT_OF_RANGE",
+        "clarification: null != date"
+      ],
+      "result": {
+        "status": "EXTRACTION_ERROR",
+        "request": {
+          "sport": null,
+          "area": null,
+          "date": null,
+          "start_time": null,
+          "duration_minutes": null,
+          "number_of_players": null,
+          "language": "ar",
+          "time_window": null
+        },
+        "reply": "ما قدرت افهم الطلب هلأ، فيك تعيد صياغته؟",
+        "match": null,
+        "alternatives": [],
+        "clarification_field": null,
+        "trace": {
+          "source": "unavailable",
+          "timezone": "Asia/Damascus",
+          "reference_date": "2026-11-25",
+          "checks": [
+            "Extraction unavailable or invalid"
+          ],
+          "evidence": null
+        }
+      }
+    },
+    {
+      "id": "08",
+      "expected": "NO_AVAILABILITY",
+      "actual": "NO_AVAILABILITY",
+      "pass": true,
+      "message": "Basketball in Baramkeh tomorrow at 6 pm for 60 minutes, 14 players.",
+      "errors": [],
+      "result": {
+        "status": "NO_AVAILABILITY",
+        "request": {
+          "sport": "basketball",
+          "area": "baramkeh",
+          "date": "2026-11-26",
+          "start_time": "18:00",
+          "duration_minutes": 60,
+          "number_of_players": 14,
+          "language": "en",
+          "time_window": null
+        },
+        "reply": "No available slot fits that sport, duration and group size in the next seven days. Could you change the group size or duration?",
+        "match": null,
+        "alternatives": [],
+        "clarification_field": null,
+        "trace": {
+          "source": "gemini",
+          "timezone": "Asia/Damascus",
+          "reference_date": "2026-11-25",
+          "checks": [
+            "Extraction evidence validated",
+            "Date, time, duration and capacity normalized in code",
+            "Sport, capacity, full interval, horizon and past times checked",
+            "No eligible venue/interval in seven days"
+          ],
+          "evidence": {
+            "sport": "Basketball",
+            "area": "Baramkeh",
+            "date": "tomorrow",
+            "start_time": "at 6 pm",
+            "duration": "60 minutes",
+            "number_of_players": "14 players"
+          }
+        }
+      }
+    },
+    {
+      "id": "09",
+      "expected": "NEEDS_INFO",
+      "actual": "NEEDS_INFO",
+      "pass": true,
+      "message": "بدي بادل بكرا بالمزة الساعة ٧ لمدة ساعة، نحنا ٤",
+      "errors": [],
+      "result": {
+        "status": "NEEDS_INFO",
+        "request": {
+          "sport": "padel",
+          "area": "mezzeh",
+          "date": "2026-11-26",
+          "start_time": null,
+          "duration_minutes": 60,
+          "number_of_players": 4,
+          "language": "ar",
+          "time_window": null
+        },
+        "reply": "أي ساعة بدك الحجز، الصبح ولا المسا؟",
+        "match": null,
+        "alternatives": [],
+        "clarification_field": "start_time",
+        "trace": {
+          "source": "gemini",
+          "timezone": "Asia/Damascus",
+          "reference_date": "2026-11-25",
+          "checks": [
+            "Extraction evidence validated",
+            "Date, time, duration and capacity normalized in code",
+            "Clarification needed: start_time"
+          ],
+          "evidence": {
+            "sport": "بادل",
+            "area": "بالمزة",
+            "date": "بكرا",
+            "start_time": "الساعة ٧",
+            "duration": "لمدة ساعة",
+            "number_of_players": "نحنا ٤"
+          }
+        }
+      }
+    },
+    {
+      "id": "10",
+      "expected": "OUT_OF_RANGE",
+      "actual": "OUT_OF_RANGE",
+      "pass": true,
+      "message": "Tennis in Dummar in 9 days at 10 am for an hour, 2 players.",
+      "errors": [],
+      "result": {
+        "status": "OUT_OF_RANGE",
+        "request": {
+          "sport": "tennis",
+          "area": "dummar",
+          "date": "2026-12-04",
+          "start_time": "10:00",
+          "duration_minutes": 60,
+          "number_of_players": 2,
+          "language": "en",
+          "time_window": null
+        },
+        "reply": "Mock availability covers 2026-11-25 through 2026-12-01. Which day in that range works for you?",
+        "match": null,
+        "alternatives": [],
+        "clarification_field": "date",
+        "trace": {
+          "source": "gemini",
+          "timezone": "Asia/Damascus",
+          "reference_date": "2026-11-25",
+          "checks": [
+            "Extraction evidence validated",
+            "Date, time, duration and capacity normalized in code",
+            "Date outside seven-day horizon"
+          ],
+          "evidence": {
+            "sport": "Tennis",
+            "area": "Dummar",
+            "date": "in 9 days",
+            "start_time": "at 10 am",
+            "duration": "an hour",
+            "number_of_players": "2 players"
+          }
+        }
+      }
+    }
+  ]
+}
