@@ -1,0 +1,18 @@
+export const FIELDS = ['sport','area','date','start_time','duration','number_of_players'] as const;
+export type Field = typeof FIELDS[number];
+export type RawIntent = Record<Field, string | null>;
+export type Language = 'ar' | 'en' | 'mixed';
+export type Sport = 'padel' | 'football' | 'basketball' | 'tennis';
+export type Area = 'mezzeh' | 'malki' | 'abu_rummaneh' | 'kafr_souseh' | 'dummar' | 'baramkeh' | 'any';
+export type TimeRequest = { kind:'exact'; minute:number } | { kind:'window'; start:number; end:number };
+export type Request = {
+  sport: Sport | null; area: Area | null; date: string | null;
+  start_time: string | null; duration_minutes: number | null; number_of_players: number | null;
+  language: Language; time_window: {start:string;end:string} | null;
+};
+export type Venue = { id:string; name:string; name_ar:string; area:Exclude<Area,'any'>; sport:Sport; capacity:number; intervals: [number,number][] };
+export type Slot = { venue_id:string; venue:string; venue_ar:string; area:Exclude<Area,'any'>; sport:Sport; date:string; start_time:string; end_time:string; capacity:number };
+export type Status = 'MATCH' | 'ALTERNATIVES' | 'NEEDS_INFO' | 'NO_AVAILABILITY' | 'OUT_OF_RANGE' | 'EXTRACTION_ERROR';
+export type Extraction = { raw:RawIntent; source:'local'|'gemini'; };
+export type Extractor = (message:string) => Promise<Extraction>;
+export type Result = {status:Status; request:Request; reply:string; match:Slot|null; alternatives:Slot[]; clarification_field:Field|null; trace:{source:string; timezone:string; reference_date:string; checks:string[]; evidence:RawIntent|null}};

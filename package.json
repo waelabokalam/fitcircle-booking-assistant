@@ -1,0 +1,14 @@
+{
+  "name": "fitcircle-booking-assistant",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.16.0" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning --experimental-strip-types src/server.ts",
+    "dev": "node --disable-warning=ExperimentalWarning --experimental-strip-types --watch src/server.ts",
+    "test": "node --disable-warning=ExperimentalWarning --experimental-strip-types --test tests/*.test.ts",
+    "eval": "node --disable-warning=ExperimentalWarning --experimental-strip-types scripts/evaluate.ts",
+    "eval:live": "node --disable-warning=ExperimentalWarning --experimental-strip-types scripts/evaluate.ts --live"
+  }
+}
