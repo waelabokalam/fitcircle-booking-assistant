@@ -28,9 +28,10 @@ GEMINI_MODEL=gemini-3.5-flash-lite
 
 3. Run `npm start`. The API reports `trace.source: gemini` after validating a provider response. The adapter calls Google's API with a structured output schema. Keep the API key in the server environment and use synthetic messages for this exercise. [generateContent REST API](https://ai.google.dev/api/generate-content) · [Structured outputs](https://ai.google.dev/gemini-api/docs/structured-output)
 
-Gemini 3.5 Flash-Lite is the default Gemini model. The adapter retries timeouts and temporary upstream errors such as HTTP 503, with exponential backoff and jitter. It allows three attempts, at most 14 seconds per attempt, and a 40-second total budget. A `Retry-After` delay can defer a retry within that budget. Authentication, quota and evidence validation failures end the request immediately.
+Gemini 3.5 Flash-Lite is the default model and uses explicit minimal thinking. The adapter uses a short extraction prompt and validates the structured response. Authentication, quota and evidence validation failures end the attempt immediately. [Gemini thinking settings](https://ai.google.dev/gemini-api/docs/thinking)
 
-If Gemini still fails, chat keeps the draft, uses bounded local recognition, and reports `local-fallback` in the trace. The stateless assignment endpoint returns HTTP 503.
+- **Browser chat** gives Gemini 3 seconds overall, including response-body reads and retry delays. A quick temporary failure can get one retry if there's enough time. When the budget expires or extraction fails, chat keeps the draft, uses bounded local recognition, and reports `local-fallback` in the trace.
+- **Stateless assignment API** allows up to three attempts, at most 14 seconds per attempt and 40 seconds overall. It returns HTTP 503 if extraction fails. Both routes respect `Retry-After` within their budgets.
 
 ## Assignment API
 
@@ -83,14 +84,14 @@ The original ten-message benchmark uses a fixed reference instant (`2026-11-25T1
 
 The HTTP regressions cover the reported exchange, Arabic and mixed-language conversations, corrections, reset, isolation, expiry, ambiguity, provider failures and booking constraints. Provider fixtures simulate HTTP responses. The live benchmark requires a Gemini key and network access and measures the provider-enabled pipeline.
 
-The automated suite passed **85/85**, the offline benchmark passed **10/10**, and two live Gemini runs each passed **10/10**. The availability benchmark took **38.7 ms** median for 1,200 calls, down from **1,089.5 ms** on the previous implementation. A separate comparison checked 2,160 identical match and ranking outcomes. [Offline and performance results](RESULTS.md) · [Live case results](RESULTS_LIVE.md)
+The latest automated suite passed **88/88**, and the offline and live Gemini benchmarks both passed **10/10**. The slowest of the four original browser turns fell from **5.87 s to 3.02 s**. Three updated turns used Gemini and one used local fallback. The availability benchmark took **38.7 ms** median for 1,200 calls, down from **1,089.5 ms** on the previous implementation. A separate comparison checked 2,160 identical match and ranking outcomes. [Browser and latency results](RESULTS.md#chat-latency) · [Live case results](RESULTS_LIVE.md)
 
 ## Known limits and next steps
 
 - The chat uses a reviewed set of public venue links and links to the full FitCircle sport directory. FitCircle shows live slots on those pages. [FitCircle court directory](https://www.fitcircleapp.com/courts) · [Top Academy Courts](https://www.fitcircleapp.com/padel/top-academy-courts)
 - The grammar and normalizers cover a bounded set of expressions, sports and areas. Complex negation, unusual date and time expressions, and unsupported terminology may require rephrasing. Multiple independent bookings need separate drafts.
 - The session ID acts as a bearer token on the local demo. State lives in a single process and disappears on restart. A browser reload starts a new chat. The mock neighborhood distances are fixed.
-- A sustained provider disruption can delay a reply for up to 40 seconds before local fallback in chat or HTTP 503 from the stateless endpoint.
+- A slow provider can reduce Gemini coverage in chat. The local interpreter asks for clarification when it cannot resolve a field.
 
 ## Repository map
 

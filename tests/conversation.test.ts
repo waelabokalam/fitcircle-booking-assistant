@@ -1,6 +1,7 @@
 import {randomUUID} from 'node:crypto';
 import {once} from 'node:events';
 import {test} from 'node:test';
+import {setTimeout as delay} from 'node:timers/promises';
 import assert from 'node:assert/strict';
 import {createApp} from '../src/server.ts';
 import {emptyRaw, localExtractor} from '../src/intent.ts';
@@ -385,6 +386,47 @@ test('provider errors and invented evidence fall back safely in chat and still f
     assert.equal(stateless.status,503);
     assert.equal((await stateless.json()).status,'EXTRACTION_ERROR');
   },extractor);
+});
+
+test('a slow Gemini response body is aborted and Arabic and mixed chat retain the draft',()=> {
+  let stalled:AbortSignal|undefined;
+  let attempts=0;
+  const extractor=geminiExtractor({apiKey:'fixture',model:'fixture-model',fetcher:async (_url,options)=>{
+    attempts++;
+    if(attempts>1){
+      const raw={...emptyRaw(),area:'المزة'};
+      return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(raw)}]}}]});
+    }
+    const signal=options?.signal;
+    assert.ok(signal);
+    stalled=signal;
+    return new Response(new ReadableStream({
+      async pull(controller){
+        try{
+          await delay(4500,undefined,{signal});
+          controller.close();
+        }catch{
+          controller.error(signal.reason);
+        }
+      }
+    }));
+  }});
+  return withServer(async url=>{
+    const turn=chat(url);
+    const first=await turn('بدي ألعب padel بكرا');
+    assert.equal(first.trace.source,'local-fallback');
+    assert.equal(stalled?.aborted,true);
+    assert.equal(attempts,1);
+    assert.equal(first.request.sport,'padel');
+    assert.equal(first.request.date,'2026-11-26');
+    assert.equal(first.request.language,'mixed');
+    assert.match(first.reply,/مواعيد/);
+    const second=await turn('المزة');
+    assert.equal(second.trace.source,'gemini');
+    assert.equal(second.request.language,'ar');
+    assert.equal(second.request.date,'2026-11-26');
+    assert.equal(second.court_links?.[0].url,`${courtOrigin}/padel/top-academy-courts?date=2026-11-26`);
+  },extractor,clock,'directory');
 });
 
 test('a provider cannot resolve conflicting local evidence or assign a bare quantity to a different pending field',()=> {

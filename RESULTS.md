@@ -94,3 +94,25 @@ The matcher benchmark cycles through an exact padel match, football alternatives
 In case 07, Gemini sometimes returned `دمشق` for `بدمر`. The schema now accepts the actual neighborhood quote or null when the recognizer identifies a single neighborhood. The verifier still rejects unsupported quotes. The two updated live runs had 10 and 12 provider attempts, respectively. Their median end-to-end latencies were 2,984 ms and 1,382 ms, and their p95s were 5,377 ms and 9,354 ms. These are small live samples with variable upstream latency. [First live run per-case results](RESULTS_LIVE.md)
 
 Chrome replayed `i want to book tmw` → `padle` → `paddle` → `tmw`. All four turns used validated Gemini output. The court guide retained November 26 and padel, then switched to RTL when `المزة` was entered. The fifth turn also used Gemini and produced the dated Top Academy Courts link. [Court link from the replay](https://www.fitcircleapp.com/padel/top-academy-courts?date=2026-11-26)
+
+### Chat latency
+
+The before run used commit `afa57aa`. Both browser runs used fresh Chrome profiles, the same live Gemini model and the same laptop. The timer started at Send and ended after the reply and inspector had rendered. Times include browser overhead.
+
+| Browser turn | Before | After | After extraction |
+|---|---:|---:|---|
+| `i want to book tmw` | 1,257 ms | 1,919 ms | Gemini |
+| `padle` | 5,867 ms | 1,097 ms | Gemini |
+| `paddle` | 1,679 ms | 3,023 ms | Local fallback |
+| `tmw` | 3,166 ms | 1,205 ms | Gemini |
+| `المزة` | 873 ms | 3,033 ms | Local fallback |
+| `بدي ألعب padel بكرا بدمر` after reset | — | 1,129 ms | Gemini |
+
+The original four replies passed in both runs. Their median fell from **2,423 ms to 1,562 ms**, and the slowest fell from **5,867 ms to 3,023 ms**. Three of the four updated turns used Gemini. The Arabic follow-up kept the dated Top Academy Courts link and RTL layout. The additional mixed-language turn produced the dated Trio Padel Arena link. Six of six updated browser turns returned the expected behavior, with four validated Gemini responses.
+
+| Stateless live runs with ten original inputs | Median | p95 | Validated Gemini responses |
+|---|---:|---:|---:|
+| Fresh baseline diagnostic | 2,539 ms | 7,268 ms | 10/10 |
+| Updated assignment benchmark | 1,544 ms | 7,941 ms | 10/10 |
+
+The earlier baseline repeat reached **9,354 ms** p95. The new stateless run passed all ten cases, with a retry after HTTP 503 on case 09. The tail still varies across live runs. The three-second deadline applies to chat, where a slow or failed provider call triggers the local interpreter without clearing the draft. The latest automated suite passed **88/88** and the offline benchmark passed **10/10**. [Updated live per-case results](RESULTS_LIVE.md)

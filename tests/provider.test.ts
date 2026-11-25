@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {emptyRaw} from '../src/intent.ts';
-import {geminiExtractor} from '../src/provider.ts';
+import {DEFAULT_GEMINI_MODEL,geminiExtractor} from '../src/provider.ts';
 
 const message='padel tomorrow';
 const raw={...emptyRaw(),sport:'padel',date:'tomorrow'};
@@ -46,6 +46,30 @@ test('Gemini skips a retry when Retry-After exceeds the remaining deadline',asyn
     return new Response('',{status:503,headers:{'Retry-After':'120'}});
   }});
   await assert.rejects(extractor(message),/Provider HTTP 503/);
+  assert.equal(attempts,1);
+});
+
+test('chat retries one quick 503 with minimal thinking and a shared deadline',async()=>{
+  const signals:AbortSignal[]=[];
+  const extractor=geminiExtractor({apiKey:'fixture',model:DEFAULT_GEMINI_MODEL,fetcher:async (_url,request)=>{
+    assert.ok(request?.signal);
+    signals.push(request.signal);
+    const config=JSON.parse(String(request.body)).generationConfig;
+    assert.deepEqual(config.thinkingConfig,{thinkingLevel:'MINIMAL'});
+    return signals.length===1?new Response('',{status:503}):success();
+  }});
+  assert.deepEqual(await extractor(message,{pendingField:null,needsTimePeriod:false}),{raw,source:'gemini'});
+  assert.equal(signals.length,2);
+  assert.equal(signals[0],signals[1]);
+});
+
+test('chat skips a retry that fits the longer booking budget but misses the chat deadline',async()=>{
+  let attempts=0;
+  const extractor=geminiExtractor({apiKey:'fixture',model:'test-model',fetcher:async()=>{
+    attempts++;
+    return new Response('',{status:503,headers:{'Retry-After':'3'}});
+  }});
+  await assert.rejects(extractor(message,{pendingField:null,needsTimePeriod:false}),/Provider HTTP 503/);
   assert.equal(attempts,1);
 });
 

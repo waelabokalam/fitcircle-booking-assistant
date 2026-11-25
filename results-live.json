@@ -3,10 +3,10 @@
   "model": "gemini-3.5-flash-lite",
   "geminiResponses": 10,
   "latencyMs": {
-    "median": 2984,
-    "p95": 5377
+    "median": 1544,
+    "p95": 7941
   },
-  "providerAttempts": 10,
+  "providerAttempts": 11,
   "reference": "2026-11-25T12:00:00.000Z",
   "passed": 10,
   "total": 10,
@@ -54,7 +54,7 @@
         }
       },
       "runtime": {
-        "elapsedMs": 3274,
+        "elapsedMs": 1419,
         "httpStatuses": [
           200
         ]
@@ -106,7 +106,7 @@
         }
       },
       "runtime": {
-        "elapsedMs": 5377,
+        "elapsedMs": 1039,
         "httpStatuses": [
           200
         ]
@@ -155,7 +155,7 @@
         }
       },
       "runtime": {
-        "elapsedMs": 5108,
+        "elapsedMs": 4191,
         "httpStatuses": [
           200
         ]
@@ -215,7 +215,7 @@
         }
       },
       "runtime": {
-        "elapsedMs": 2724,
+        "elapsedMs": 4675,
         "httpStatuses": [
           200
         ]
@@ -299,7 +299,7 @@
         }
       },
       "runtime": {
-        "elapsedMs": 1424,
+        "elapsedMs": 5460,
         "httpStatuses": [
           200
         ]
@@ -383,7 +383,7 @@
         }
       },
       "runtime": {
-        "elapsedMs": 5305,
+        "elapsedMs": 1669,
         "httpStatuses": [
           200
         ]
@@ -432,7 +432,7 @@
         }
       },
       "runtime": {
-        "elapsedMs": 1521,
+        "elapsedMs": 1077,
         "httpStatuses": [
           200
         ]
@@ -482,7 +482,7 @@
         }
       },
       "runtime": {
-        "elapsedMs": 1330,
+        "elapsedMs": 928,
         "httpStatuses": [
           200
         ]
@@ -531,8 +531,9 @@
         }
       },
       "runtime": {
-        "elapsedMs": 3244,
+        "elapsedMs": 7941,
         "httpStatuses": [
+          503,
           200
         ]
       }
@@ -580,7 +581,7 @@
         }
       },
       "runtime": {
-        "elapsedMs": 1394,
+        "elapsedMs": 1159,
         "httpStatuses": [
           200
         ]
